@@ -1,372 +1,368 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FHE Calculator - Zama</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FHE Calculator - Zama (Sepolia)</title>
+
+    <!-- Font Awesome + Ethers v6 UMD + Relayer SDK UMD -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://unpkg.com/@zama-fhe/relayer-sdk@latest/dist/index.umd.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press Start 2P&display=swap');
-        * {margin:0;padding:0;box-sizing:border-box;}
-        body { font-family:'Press Start 2P',cursive; background:#1a1a2e; color:#ffd700; overflow-x:hidden; }
-        body::before { content:''; position:fixed;top:0;left:0;width:100%;height:100%; background-image: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px), repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px); pointer-events:none;z-index:0; }
-        header { position:relative; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; padding:20px 40px; background:#0f0f1e; border-bottom:4px solid #ffd700; box-shadow:0 4px 0 #cc9900; }
-        .social-icons {display:flex;gap:12px;align-items:center;}
-        .social-icons a i { font-size:22px; color:#ffd700; text-shadow:1px 1px 0 #cc9900; transition:transform 0.1s,color 0.2s; }
-        .social-icons a:hover i { color:#ffed4e; transform:translate(-2px,-2px); text-shadow:2px 2px 0 #cc9900; }
-        .logo { font-size:50px; color:#ffd700; text-shadow:3px 3px 0 #cc9900; animation:float 3s ease-in-out infinite; }
-        @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
-        nav {display:flex;gap:30px;flex-wrap:wrap;}
-        nav a { color:#ffd700; text-decoration:none; font-size:12px; padding:10px 15px; border:3px solid #ffd700; background:#0f0f1e; transition:all 0.1s; }
-        nav a:hover { background:#ffd700;color:#0f0f1e; transform:translate(-2px,-2px); box-shadow:4px 4px 0 #cc9900; }
-        .wallet-info {display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
-        .connect-btn { padding:12px 24px; background:#ffd700;color:#0f0f1e; border:3px solid #ffd700; font-family:'Press Start 2P',cursive; font-size:10px; cursor:pointer; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; white-space:nowrap; }
-        .connect-btn:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 #cc9900; }
-        .connect-btn.connected {background:#00ff00;border-color:#00ff00;}
-        .wallet-address { font-size:10px;color:#00ff00; padding:8px 12px;background:#0f0f1e; border:2px solid #00ff00; }
-        .hero { position:relative; text-align:center; padding:100px 20px; background:linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%); }
-        .hero h1 { font-size:48px; color:#ffd700; text-shadow:5px 5px 0 #cc9900, 10px 10px 0 rgba(0,0,0,0.3); margin-bottom:30px; animation:glitch 5s infinite; }
-        @keyframes glitch { 0%, 90%, 100% {transform:translate(0);} 91% {transform:translate(-2px, 2px);} 92% {transform:translate(2px, -2px);} 93% {transform:translate(-2px, 2px);} }
-        .hero p { font-size:14px; color:#ffed4e; margin-bottom:50px; line-height:1.8; }
-        .calc-container { position:relative; max-width:500px; margin:0 auto; padding:30px; background:#0f0f1e; border:4px solid #ffd700; box-shadow:8px 8px 0 #cc9900, 12px 12px 0 rgba(0,0,0,0.3); }
-        .calc-header { display:flex; justify-content:space-between; margin-bottom:20px; padding-bottom:15px; border-bottom:2px solid #ffd700; }
-        .calc-header h2 {font-size:16px;color:#ffd700;}
-        .network-badge { font-size:10px; padding:5px 10px; background:#1a1a2e; border:2px solid #ffd700; color:#ffd700; }
-        .result-display { background:#1a1a2e; border:3px solid #ffd700; padding:20px; margin-bottom:20px; text-align:center; font-size:20px; color:#00ff00; min-height:50px; display:flex; align-items:center; justify-content:center; word-break:break-all; }
-        .value-input { width:100%; background:transparent; border:2px solid #ffd700; color:#ffd700; font-family:'Press Start 2P', cursive; font-size:18px; padding:10px; text-align:center; margin-bottom:20px; outline:none; }
-        .operation-buttons { display:flex; gap:10px; margin-bottom:20px; }
-        .op-btn { flex:1; padding:15px; background:#ffd700; color:#0f0f1e; border:3px solid #ffd700; font-family:'Press Start 2P', cursive; font-size:14px; cursor:pointer; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; }
-        .op-btn:hover:not(:disabled) { transform:translate(-2px, -2px); box-shadow:6px 6px 0 #cc9900; }
-        .op-btn:disabled { background:#666; border-color:#666; cursor:not-allowed; box-shadow:none; }
-        .calc-btn { width:100%; padding:20px; background:#ffd700; color:#0f0f1e; border:4px solid #ffd700; font-family:'Press Start 2P', cursive; font-size:14px; cursor:pointer; margin-top:20px; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; }
-        .calc-btn:hover:not(:disabled) { transform:translate(-2px, -2px); box-shadow:6px 6px 0 #cc9900; }
-        .calc-btn:disabled { background:#666; border-color:#666; cursor:not-allowed; box-shadow:none; }
-        .loading { display:inline-block; animation:blink 1s infinite; }
-        @keyframes blink { 0%, 50% {opacity:1;} 51%, 100% {opacity:0;} }
-        .notification { position:fixed; top:100px; right:20px; background:#0f0f1e; border:3px solid #ffd700; padding:20px; max-width:350px; font-size:10px; box-shadow:6px 6px 0 #cc9900; z-index:1000; animation:slideIn 0.3s; }
-        @keyframes slideIn { from {transform:translateX(400px);} to {transform:translateX(0);} }
-        .notification.success {border-color:#00ff00;}
-        .notification.error {border-color:#ff0000;}
-        .features {padding:100px 40px;background:#0f0f1e;}
-        .features-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:40px; max-width:1200px; margin:0 auto; }
-        .feature-card { background:#1a1a2e; border:4px solid #ffd700; padding:30px; transition:all 0.2s; }
-        .feature-card:hover { transform:translate(-4px, -4px); box-shadow:8px 8px 0 #cc9900; }
-        .feature-icon { width:60px; height:60px; background:#ffd700; margin-bottom:20px; }
-        .feature-card h3 { font-size:14px; color:#ffd700; margin-bottom:15px; }
-        .feature-card p { font-size:10px; line-height:1.6; color:#ffed4e; }
-        footer { padding:40px; background:#0f0f1e; border-top:4px solid #ffd700; text-align:center; color:#ffed4e; font-size:10px; }
-        .coin { position:fixed; width:30px; height:30px; background:#ffd700; border:3px solid #cc9900; border-radius:50%; animation:fall linear infinite; z-index:-1; }
-        @keyframes fall { to {transform:translateY(100vh) rotate(360deg);} }
-        @media (max-width:768px) { .hero h1 {font-size:24px;} .hero p {font-size:10px;} nav {flex-direction:column;gap:10px;} .calc-container {margin:20px;} header {padding:15px 20px;} .logo {font-size:18px;} .social-icons a i {font-size:18px;} }
+      /* --- giữ nguyên CSS giao diện retro bạn đã dùng (rút gọn tí) --- */
+      @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'Press Start 2P',cursive;background:#1a1a2e;color:#ffd700;overflow-x:hidden}
+      header{display:flex;justify-content:space-between;align-items:center;padding:18px 30px;background:#0f0f1e;border-bottom:4px solid #ffd700}
+      .logo{font-size:36px;color:#ffd700}
+      .wallet-info{display:flex;gap:12px;align-items:center}
+      .connect-btn{padding:10px 18px;background:#ffd700;color:#0f0f1e;border:3px solid #ffd700;cursor:pointer}
+      .connect-btn.connected{background:#00ff00;border-color:#00ff00}
+      .calc-container{max-width:540px;margin:40px auto;padding:24px;background:#0f0f1e;border:4px solid #ffd700}
+      .result-display{background:#1a1a2e;border:3px solid #ffd700;padding:18px;text-align:center;color:#00ff00;min-height:48px;word-break:break-all}
+      .value-input{width:100%;background:transparent;border:2px solid #ffd700;color:#ffd700;padding:12px;text-align:center;margin:14px 0}
+      .op-btn{padding:14px;background:#ffd700;border:3px solid #ffd700;cursor:pointer}
+      .notification{position:fixed;top:90px;right:20px;background:#0f0f1e;border:3px solid #ffd700;padding:14px;z-index:9999}
+      .notification.error{border-color:#ff0000}
+      .notification.success{border-color:#00ff00}
+      @media(max-width:768px){header{padding:12px} .logo{font-size:20px}}
     </style>
 </head>
 <body>
-    <header>
-        <div class="social-icons">
-            <a href="https://x.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
-                <i class="fab fa-x-twitter"></i>
-            </a>
-            <a href="https://github.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="GitHub">
-                <i class="fab fa-github"></i>
-            </a>
-        </div>
-        <div class="logo">FHE Calc</div>
-        <nav>
-            <a href="#calc">CALCULATOR</a>
-            <a href="#about">ABOUT</a>
-        </nav>
-        <div class="wallet-info">
-            <div id="walletAddress" class="wallet-address" style="display: none;"></div>
-            <button class="connect-btn" id="connectBtn" onclick="connectWallet()">CONNECT WALLET</button>
-        </div>
-    </header>
-    <section class="hero" id="calc">
-        <h1>FHE CALCULATOR</h1>
-        <p>Perform encrypted additions and subtractions with Zama FHE!</p>
-        <div class="calc-container">
-            <div class="calc-header">
-                <h2>CALCULATOR</h2>
-                <div class="network-badge" id="networkBadge">NOT CONNECTED</div>
-            </div>
-            <div class="result-display" id="resultDisplay">0x0000... (Encrypted)</div>
-            <input type="number" class="value-input" id="valueInput" placeholder="Enter value" min="0">
-            <div class="operation-buttons">
-                <button class="op-btn" id="addBtn" onclick="performAdd()" disabled>+ ADD</button>
-                <button class="op-btn" id="subBtn" onclick="performSubtract()" disabled>- SUB</button>
-            </div>
-            <button class="calc-btn" id="refreshBtn" onclick="refreshResult()" disabled>REFRESH RESULT</button>
-            <div style="margin-top:20px;font-size:10px;color:#ffed4e;text-align:center;">
-                <p>Contract: 0xE822...975F</p>
-                <p>Network: Sepolia Testnet</p>
-            </div>
-        </div>
-    </section>
-    <section class="features" id="about">
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>ZAMA FHE</h3>
-                <p>Powered by Zama's Fully Homomorphic Encryption for private computations on blockchain!</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>ENCRYPTED OPS</h3>
-                <p>Perform additions and subtractions on encrypted data without revealing values!</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>SECURE</h3>
-                <p>All operations are performed on encrypted data. Only you can decrypt the results!</p>
-            </div>
-        </div>
-    </section>
-    <footer>
-        <p>ZAMA FHE CALCULATOR | DEMO ON SEPOLIA TESTNET ⛓️</p>
-        <p style="margin-top:10px;">Built with Zama FHE & Ethers.js</p>
-    </footer>
-    <script>
-        const CONTRACT_ADDRESS = '0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F';
-        const SEPOLIA_CHAIN_ID = 11155111n;
-        const SEPOLIA_CONFIG = {
-            chainId: '0xaa36a7',
-            name: 'Sepolia',
-            nativeCurrency: { name: 'Sepolia Ether', symbol: 'SEP', decimals: 18 },
-            rpcUrls: ['https://rpc.sepolia.org'],
-            blockExplorerUrls: ['https://sepolia.etherscan.io']
-        };
-        const CONTRACT_ABI = [
-            {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"add","outputs":[],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[],"name":"getResult","outputs":[{"internalType":"euint32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"protocolId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
-            {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"subtract","outputs":[],"stateMutability":"nonpayable","type":"function"}
-        ];
+  <header>
+    <div class="logo">FHE Calc</div>
+    <div class="wallet-info">
+      <div id="walletAddress" style="display:none;color:#00ff00;padding:6px 10px;border:2px solid #00ff00"></div>
+      <button id="connectBtn" class="connect-btn" onclick="connectWallet()">CONNECT WALLET</button>
+    </div>
+  </header>
 
-        let provider;
-        let signer;
-        let userAddress;
-        let contract;
-        let fhevmInstance;
+  <main>
+    <div class="calc-container">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="color:#ffd700">CALCULATOR</h3>
+        <div id="networkBadge" style="border:2px solid #ffd700;padding:6px 8px;color:#ffd700">NOT CONNECTED</div>
+      </div>
 
-        function createCoin() {
-            const coin = document.createElement('div');
-            coin.className = 'coin';
-            coin.style.left = Math.random() * 100 + 'vw';
-            coin.style.animationDuration = (Math.random() * 3 + 2) + 's';
-            coin.style.opacity = Math.random() * 0.3 + 0.1;
-            document.body.appendChild(coin);
-            setTimeout(() => coin.remove(), 5000);
-        }
-        setInterval(createCoin, 500);
+      <div id="resultDisplay" class="result-display">0x0000... (Encrypted)</div>
 
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = `<strong>${type.toUpperCase()}:</strong><br>${message}`;
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.style.animation = 'slideIn 0.3s reverse';
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-        }
+      <input id="valueInput" class="value-input" type="number" placeholder="Enter value" min="0" />
 
-        async function encryptWithSDK(value, contractAddress, userAddress) {
-            if (!fhevmInstance) throw new Error('FHEVM SDK not initialized');
-            const buffer = fhevmInstance.createEncryptedInput(contractAddress, userAddress);
-            buffer.add32(BigInt(value));
-            const ciphertexts = await buffer.encrypt();
-            return {
-                encrypted: ciphertexts.handles[0],
-                proof: ciphertexts.inputProof
-            };
-        }
+      <div style="display:flex;gap:10px">
+        <button id="addBtn" class="op-btn" onclick="performAdd()" disabled>+ ADD</button>
+        <button id="subBtn" class="op-btn" onclick="performSubtract()" disabled>- SUB</button>
+      </div>
 
-        async function decryptWithSDK(encryptedHandle, contractAddress) {
-            if (!fhevmInstance || !signer) throw new Error('FHEVM SDK or signer not ready');
-            const keypair = fhevmInstance.generateKeypair();
-            const handleContractPairs = [{ handle: encryptedHandle, contractAddress }];
-            const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-            const durationDays = '10';
-            const contractAddresses = [contractAddress];
+      <button id="refreshBtn" style="margin-top:14px;padding:12px;width:100%;background:#ffd700;border:4px solid #ffd700" onclick="refreshResult()" disabled>REFRESH RESULT</button>
 
-            const eip712 = fhevmInstance.createEIP712(
-                keypair.publicKey,
-                contractAddresses,
-                startTimeStamp,
-                durationDays
-            );
+      <div style="margin-top:14px;font-size:12px;color:#ffed4e;text-align:center">
+        <div>Contract: 0xE822...975F (Sepolia)</div>
+      </div>
+    </div>
+  </main>
 
-            const signature = await signer.signTypedData(
-                eip712.domain,
-                { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
-                eip712.message
-            );
+  <div id="toasts"></div>
 
-            const result = await fhevmInstance.userDecrypt(
-                handleContractPairs,
-                keypair.privateKey,
-                keypair.publicKey,
-                signature.replace('0x', ''),
-                contractAddresses,
-                await signer.getAddress(),
-                startTimeStamp,
-                durationDays
-            );
+  <script>
+  /*******************************
+   *  CONFIG / ABI
+   *******************************/
+  const CONTRACT_ADDRESS = '0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F';
+  const SEPOLIA_CHAIN_ID = 11155111; // number
+  const CONTRACT_ABI = [
+    {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"add","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"getResult","outputs":[{"internalType":"euint32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"protocolId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
+    {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"subtract","outputs":[],"stateMutability":"nonpayable","type":"function"}
+  ];
 
-            return result[encryptedHandle];
-        }
+  let provider, signer, userAddress, contract, fhevmInstance;
 
-        async function connectWallet() {
+  function showNotification(message, type = 'info') {
+    const el = document.createElement('div');
+    el.className = 'notification ' + (type === 'error' ? 'error' : (type === 'success' ? 'success' : ''));
+    el.innerHTML = `<strong>${type.toUpperCase()}</strong><br>${message}`;
+    document.body.appendChild(el);
+    setTimeout(()=> {
+      el.style.animation = 'fadeout 0.3s';
+      setTimeout(()=>el.remove(),350);
+    }, 4500);
+  }
+
+  /****************************************************************
+   *  encryptWithSDK (createEncryptedInput -> add32 -> encrypt())
+   *  decryptWithSDK (generateKeypair -> createEIP712 -> sign -> userDecrypt)
+   *
+   *  These functions use the relayer SDK instance methods which
+   *  the UMD builds expose on window.relayerSdk.
+   ****************************************************************/
+
+  async function encryptWithSDK(value, contractAddress, userAddr) {
+    if (!fhevmInstance) throw new Error('FHEVM SDK not initialized');
+    if (!fhevmInstance.createEncryptedInput) {
+      // helpful error if UMD/WASM not present
+      throw new Error('Relayer SDK missing createEncryptedInput – your UMD might not include WASM. Use bundler or follow Zama docs.');
+    }
+
+    // create buffer bound to contract + user
+    const buffer = fhevmInstance.createEncryptedInput(contractAddress, userAddr);
+    // add 32-bit value
+    buffer.add32(BigInt(value));
+    // encrypt -> returns { handles: [...], inputProof: bytes }
+    const ciphertexts = await buffer.encrypt();
+    // return first handle and proof
+    return { encrypted: ciphertexts.handles[0], proof: ciphertexts.inputProof };
+  }
+
+  async function decryptWithSDK(encryptedHandle, contractAddress) {
+    if (!fhevmInstance || !signer) throw new Error('FHEVM SDK or signer not ready');
+
+    // generate ephemeral keypair for user decryption
+    const keypair = fhevmInstance.generateKeypair();
+
+    const handleContractPairs = [{ handle: encryptedHandle, contractAddress }];
+    const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+    const durationDays = '10';
+    const contractAddresses = [contractAddress];
+
+    // create EIP712 typed data for user's decrypt request
+    const eip712 = fhevmInstance.createEIP712(
+      keypair.publicKey,
+      contractAddresses,
+      startTimeStamp,
+      durationDays
+    );
+
+    // Request signature from wallet using EIP-712
+    let signature;
+    try {
+      // ethers v6 supports signTypedData(domain, types, value)
+      if (typeof signer.signTypedData === 'function') {
+        signature = await signer.signTypedData(eip712.domain, eip712.types, eip712.message);
+      } else if (typeof signer._signTypedData === 'function') {
+        signature = await signer._signTypedData(eip712.domain, eip712.types, eip712.message);
+      } else {
+        throw new Error('Wallet does not support typed-data signing (EIP-712).');
+      }
+    } catch (err) {
+      throw new Error('Signing typed data failed: ' + (err.message || err));
+    }
+
+    const signerAddress = await signer.getAddress();
+
+    // Call userDecrypt on the relayer SDK
+    const result = await fhevmInstance.userDecrypt(
+      handleContractPairs,
+      keypair.privateKey,
+      keypair.publicKey,
+      signature.replace(/^0x/, ''),
+      contractAddresses,
+      signerAddress,
+      startTimeStamp,
+      durationDays
+    );
+
+    // result is an object keyed by handle -> plaintext BigInt or similar
+    return result[encryptedHandle];
+  }
+
+  /***********************
+   *  CONNECT WALLET
+   ***********************/
+  async function connectWallet() {
+    try {
+      if (typeof window.ethereum === 'undefined') {
+        showNotification('MetaMask chưa được cài đặt!', 'error');
+        return;
+      }
+
+      showNotification('Đang kết nối MetaMask...', 'info');
+
+      // ethers v6 BrowserProvider
+      provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send('eth_requestAccounts', []);
+      signer = await provider.getSigner();
+      userAddress = await signer.getAddress();
+
+      const network = await provider.getNetwork();
+      console.log('Connected chainId:', network.chainId);
+
+      if (network.chainId !== SEPOLIA_CHAIN_ID) {
+        showNotification('Vui lòng chuyển sang Sepolia testnet (11155111)', 'error');
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0xaa36a7' }],
+          });
+        } catch (switchErr) {
+          // if chain not added -> try add
+          if (switchErr && switchErr.code === 4902) {
             try {
-                if (typeof window.ethereum === 'undefined') {
-                    showNotification('MetaMask chưa được cài đặt! Vui lòng cài extension MetaMask.', 'error');
-                    return;
-                }
-                showNotification('Đang kết nối MetaMask...', 'info');
-                provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner();
-                userAddress = await signer.getAddress();
-                let network = await provider.getNetwork();
-                console.log('Kết nối chain ID:', network.chainId);
-
-                if (network.chainId !== SEPOLIA_CHAIN_ID) {
-                    showNotification('Vui lòng chuyển sang Sepolia testnet! Chain ID nên là 11155111', 'error');
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_switchEthereumChain',
-                            params: [{ chainId: '0xaa36a7' }],
-                        });
-                    } catch (switchError) {
-                        if (switchError.code === 4902) { // Chain chưa được thêm
-                            try {
-                                await window.ethereum.request({
-                                    method: 'wallet_addEthereumChain',
-                                    params: [SEPOLIA_CONFIG],
-                                });
-                            } catch (addError) {
-                                showNotification('Thêm network thất bại. Vui lòng thêm Sepolia thủ công trong MetaMask.', 'error');
-                                return;
-                            }
-                        } else {
-                            showNotification('Chuyển network thất bại. Vui lòng chuyển thủ công.', 'error');
-                            return;
-                        }
-                    }
-                    // Sau switch/add thành công, lấy lại network
-                    network = await provider.getNetwork();
-                    if (network.chainId !== SEPOLIA_CHAIN_ID) {
-                        showNotification('Network vẫn chưa đúng. Vui lòng thử lại.', 'error');
-                        return;
-                    }
-                }
-
-                // Khởi tạo Relayer SDK với Sepolia config
-                const { createInstance, SepoliaConfig } = window.relayerSdk; // Sửa ở đây, sử dụng window.relayerSdk
-                fhevmInstance = await createInstance(SepoliaConfig);
-
-                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-                document.getElementById('networkBadge').textContent = 'SEPOLIA';
-                document.getElementById('walletAddress').textContent = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
-                document.getElementById('walletAddress').style.display = 'block';
-                const connectBtn = document.getElementById('connectBtn');
-                connectBtn.textContent = 'CONNECTED';
-                connectBtn.classList.add('connected');
-                connectBtn.disabled = true;
-                document.getElementById('addBtn').disabled = false;
-                document.getElementById('subBtn').disabled = false;
-                document.getElementById('refreshBtn').disabled = false;
-                await refreshResult();
-                showNotification(`Kết nối thành công: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`, 'success');
-            } catch (error) {
-                console.error('Lỗi kết nối:', error);
-                showNotification('Kết nối ví thất bại: ' + error.message, 'error');
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: '0xaa36a7',
+                  chainName: 'Sepolia',
+                  nativeCurrency: { name: 'Sepolia ETH', symbol: 'SEP', decimals: 18 },
+                  rpcUrls: ['https://rpc.sepolia.org'],
+                  blockExplorerUrls: ['https://sepolia.etherscan.io']
+                }]
+              });
+            } catch (addErr) {
+              showNotification('Thêm Sepolia vào ví thất bại. Hãy thêm thủ công.', 'error');
+              return;
             }
+          } else {
+            showNotification('Chuyển network thất bại. Hãy chuyển thủ công sang Sepolia.', 'error');
+            return;
+          }
         }
 
-        async function performAdd() {
-            try {
-                const value = parseInt(document.getElementById('valueInput').value);
-                if (isNaN(value) || value <= 0) {
-                    showNotification('Nhập giá trị số dương!', 'error');
-                    return;
-                }
-                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
-                const addBtn = document.getElementById('addBtn');
-                addBtn.disabled = true;
-                addBtn.innerHTML = '+ ADD <span class="loading">...</span>';
-                showNotification('Đang gửi giao dịch...', 'info');
-                const tx = await contract.add(encrypted, proof);
-                showNotification('Đang chờ xác nhận...', 'info');
-                await tx.wait();
-                showNotification(`Đã cộng ${value}! Giao dịch xác nhận.`, 'success');
-                await refreshResult();
-                addBtn.disabled = false;
-                addBtn.innerHTML = '+ ADD';
-            } catch (error) {
-                console.error('Lỗi cộng:', error);
-                showNotification('Cộng thất bại: ' + (error.message || error), 'error');
-                document.getElementById('addBtn').disabled = false;
-                document.getElementById('addBtn').innerHTML = '+ ADD';
-            }
+        // refresh network
+        const newNet = await provider.getNetwork();
+        if (newNet.chainId !== SEPOLIA_CHAIN_ID) {
+          showNotification('Network vẫn chưa phải Sepolia. Hãy thử lại.', 'error');
+          return;
         }
+      }
 
-        async function performSubtract() {
-            try {
-                const value = parseInt(document.getElementById('valueInput').value);
-                if (isNaN(value) || value <= 0) {
-                    showNotification('Nhập giá trị số dương!', 'error');
-                    return;
-                }
-                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
-                const subBtn = document.getElementById('subBtn');
-                subBtn.disabled = true;
-                subBtn.innerHTML = '- SUB <span class="loading">...</span>';
-                showNotification('Đang gửi giao dịch...', 'info');
-                const tx = await contract.subtract(encrypted, proof);
-                showNotification('Đang chờ xác nhận...', 'info');
-                await tx.wait();
-                showNotification(`Đã trừ ${value}! Giao dịch xác nhận.`, 'success');
-                await refreshResult();
-                subBtn.disabled = false;
-                subBtn.innerHTML = '- SUB';
-            } catch (error) {
-                console.error('Lỗi trừ:', error);
-                showNotification('Trừ thất bại: ' + (error.message || error), 'error');
-                document.getElementById('subBtn').disabled = false;
-                document.getElementById('subBtn').innerHTML = '- SUB';
-            }
-        }
+      // Check relayer SDK available
+      if (!window.relayerSdk) {
+        showNotification('Relayer SDK chưa load (window.relayerSdk undefined).', 'error');
+        console.error('window.relayerSdk missing. UMD not loaded or WASM missing.');
+        return;
+      }
 
-        async function refreshResult() {
-            try {
-                if (!contract) return;
-                const encryptedResult = await contract.getResult();
-                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Đang giải mã...)`;
+      // initialize FHE relayer instance using the UMD export
+      // (DO NOT destructure; call via window.relayerSdk)
+      fhevmInstance = await window.relayerSdk.createInstance(window.relayerSdk.SepoliaConfig);
 
-                const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
-                document.getElementById('resultDisplay').textContent = decryptedValue.toString();
-                showNotification('Kết quả đã làm mới và giải mã!', 'success');
-            } catch (error) {
-                console.error('Lỗi làm mới:', error);
-                showNotification('Làm mới/giải mã thất bại: ' + (error.message || error), 'error');
-                document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Mã hóa)` : '0';
-            }
-        }
+      // create contract with signer
+      contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-        if (window.ethereum) {
-            window.ethereum.on('accountsChanged', (accounts) => {
-                if (accounts.length === 0) {
-                    location.reload();
-                } else {
-                    connectWallet();
-                }
-            });
-            window.ethereum.on('chainChanged', () => {
-                location.reload();
-            });
-        }
-    </script>
+      // update UI
+      document.getElementById('networkBadge').textContent = 'SEPOLIA';
+      const wa = document.getElementById('walletAddress');
+      wa.textContent = userAddress.slice(0,6) + '...' + userAddress.slice(-4);
+      wa.style.display = 'block';
+      const connectBtn = document.getElementById('connectBtn');
+      connectBtn.textContent = 'CONNECTED';
+      connectBtn.classList.add('connected');
+      connectBtn.disabled = true;
+      document.getElementById('addBtn').disabled = false;
+      document.getElementById('subBtn').disabled = false;
+      document.getElementById('refreshBtn').disabled = false;
+
+      showNotification(`Kết nối thành công: ${userAddress.slice(0,6)}...${userAddress.slice(-4)}`, 'success');
+
+      // initial fetch
+      await refreshResult();
+
+    } catch (err) {
+      console.error('Connect error:', err);
+      showNotification('Kết nối ví thất bại: ' + (err.message || err), 'error');
+    }
+  }
+
+  /***********************
+   *  OPERATIONS
+   ***********************/
+  async function performAdd() {
+    try {
+      const v = parseInt(document.getElementById('valueInput').value);
+      if (isNaN(v) || v <= 0) { showNotification('Vui lòng nhập giá trị dương', 'error'); return; }
+
+      const addBtn = document.getElementById('addBtn');
+      addBtn.disabled = true;
+      addBtn.innerHTML = '+ ADD <span style="opacity:.8">...</span>';
+
+      showNotification('Đang mã hóa và gửi giao dịch...', 'info');
+
+      const { encrypted, proof } = await encryptWithSDK(v, CONTRACT_ADDRESS, userAddress);
+
+      const tx = await contract.add(encrypted, proof);
+      showNotification('Giao dịch đã gửi, đang chờ xác nhận...', 'info');
+      await tx.wait();
+
+      showNotification(`Đã cộng ${v}. Transaction confirmed.`, 'success');
+      await refreshResult();
+
+      addBtn.disabled = false;
+      addBtn.innerHTML = '+ ADD';
+    } catch (err) {
+      console.error('Add error:', err);
+      showNotification('Cộng thất bại: ' + (err.message || err), 'error');
+      document.getElementById('addBtn').disabled = false;
+      document.getElementById('addBtn').innerHTML = '+ ADD';
+    }
+  }
+
+  async function performSubtract() {
+    try {
+      const v = parseInt(document.getElementById('valueInput').value);
+      if (isNaN(v) || v <= 0) { showNotification('Vui lòng nhập giá trị dương', 'error'); return; }
+
+      const subBtn = document.getElementById('subBtn');
+      subBtn.disabled = true;
+      subBtn.innerHTML = '- SUB <span style="opacity:.8">...</span>';
+
+      showNotification('Đang mã hóa và gửi giao dịch...', 'info');
+
+      const { encrypted, proof } = await encryptWithSDK(v, CONTRACT_ADDRESS, userAddress);
+
+      const tx = await contract.subtract(encrypted, proof);
+      showNotification('Giao dịch đã gửi, đang chờ xác nhận...', 'info');
+      await tx.wait();
+
+      showNotification(`Đã trừ ${v}. Transaction confirmed.`, 'success');
+      await refreshResult();
+
+      subBtn.disabled = false;
+      subBtn.innerHTML = '- SUB';
+    } catch (err) {
+      console.error('Subtract error:', err);
+      showNotification('Trừ thất bại: ' + (err.message || err), 'error');
+      document.getElementById('subBtn').disabled = false;
+      document.getElementById('subBtn').innerHTML = '- SUB';
+    }
+  }
+
+  async function refreshResult() {
+    try {
+      if (!contract) return;
+      let encryptedResult = await contract.getResult();
+      // show short encrypted handle while decrypting
+      document.getElementById('resultDisplay').textContent = `${String(encryptedResult).slice(0,12)}... (Đang giải mã...)`;
+
+      // try decrypt
+      const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
+      document.getElementById('resultDisplay').textContent = (decryptedValue !== undefined && decryptedValue !== null) ? decryptedValue.toString() : '0';
+      showNotification('Kết quả đã làm mới và giải mã!', 'success');
+    } catch (err) {
+      console.error('Refresh error:', err);
+      showNotification('Làm mới/giải mã thất bại: ' + (err.message || err), 'error');
+      // if encryptedResult exists show the encrypted short
+      try {
+        const maybeEnc = await contract.getResult();
+        document.getElementById('resultDisplay').textContent = maybeEnc ? `${String(maybeEnc).slice(0,12)}... (Encrypted)` : '0';
+      } catch (_) {
+        document.getElementById('resultDisplay').textContent = '0';
+      }
+    }
+  }
+
+  // auto handle account/network changes
+  if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+      if (accounts.length === 0) location.reload();
+      else connectWallet();
+    });
+    window.ethereum.on('chainChanged', () => {
+      location.reload();
+    });
+  }
+  </script>
 </body>
 </html>
