@@ -6,8 +6,8 @@
     <title>FHE Calculator - Zama</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <!-- Cập nhật CDN cho Zama Relayer SDK dựa trên docs mới nhất (kiểm tra unpkg hoặc npm cho version ~0.1.0 hoặc mới hơn vào 2025) -->
-    <script src="https://unpkg.com/@zama.ai/fhevm-relayer-sdk@latest/dist/index.umd.js"></script> <!-- Sử dụng @latest cho phiên bản mới nhất -->
+    <!-- Cập nhật CDN đúng cho Zama Relayer SDK (dựa trên package @zama-fhe/relayer-sdk) -->
+    <script src="https://unpkg.com/@zama-fhe/relayer-sdk@latest/dist/index.umd.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         * {margin:0;padding:0;box-sizing:border-box;}
@@ -130,6 +130,13 @@
     <script>
         const CONTRACT_ADDRESS = '0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F';
         const SEPOLIA_CHAIN_ID = 11155111n;
+        const SEPOLIA_CONFIG = {
+            chainId: '0xaa36a7',
+            name: 'Sepolia',
+            nativeCurrency: { name: 'Sepolia Ether', symbol: 'SEP', decimals: 18 },
+            rpcUrls: ['https://rpc.sepolia.org'],
+            blockExplorerUrls: ['https://sepolia.etherscan.io']
+        };
         const CONTRACT_ABI = [
             {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"add","outputs":[],"stateMutability":"nonpayable","type":"function"},
             {"inputs":[],"name":"getResult","outputs":[{"internalType":"euint32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
@@ -141,7 +148,7 @@
         let signer;
         let userAddress;
         let contract;
-        let fhevmInstance; // Instance của Relayer SDK
+        let fhevmInstance;
 
         function createCoin() {
             const coin = document.createElement('div');
@@ -168,11 +175,11 @@
         async function encryptWithSDK(value, contractAddress, userAddress) {
             if (!fhevmInstance) throw new Error('FHEVM SDK not initialized');
             const buffer = fhevmInstance.createEncryptedInput(contractAddress, userAddress);
-            buffer.add32(BigInt(value)); // Mã hóa uint32
-            const ciphertexts = await buffer.encrypt(); // Upload và generate proof
+            buffer.add32(BigInt(value));
+            const ciphertexts = await buffer.encrypt();
             return {
-                encrypted: ciphertexts.handles[0], // bytes32 externalEuint32
-                proof: ciphertexts.inputProof // bytes proof
+                encrypted: ciphertexts.handles[0],
+                proof: ciphertexts.inputProof
             };
         }
 
@@ -181,7 +188,7 @@
             const keypair = fhevmInstance.generateKeypair();
             const handleContractPairs = [{ handle: encryptedHandle, contractAddress }];
             const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-            const durationDays = '10'; // Thời hạn ACL (demo)
+            const durationDays = '10';
             const contractAddresses = [contractAddress];
 
             const eip712 = fhevmInstance.createEIP712(
@@ -208,38 +215,56 @@
                 durationDays
             );
 
-            return result[encryptedHandle]; // BigInt plaintext
+            return result[encryptedHandle];
         }
 
         async function connectWallet() {
             try {
                 if (typeof window.ethereum === 'undefined') {
-                    showNotification('MetaMask not found! Please install MetaMask extension.', 'error');
+                    showNotification('MetaMask chưa được cài đặt! Vui lòng cài extension MetaMask.', 'error');
                     return;
                 }
-                showNotification('Connecting to MetaMask...', 'info');
+                showNotification('Đang kết nối MetaMask...', 'info');
                 provider = new ethers.BrowserProvider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 signer = await provider.getSigner();
                 userAddress = await signer.getAddress();
-                const network = await provider.getNetwork();
-                console.log('Connected to chain ID:', network.chainId);
+                let network = await provider.getNetwork();
+                console.log('Kết nối chain ID:', network.chainId);
 
                 if (network.chainId !== SEPOLIA_CHAIN_ID) {
-                    showNotification('Please switch to Sepolia testnet! Chain ID should be 11155111', 'error');
+                    showNotification('Vui lòng chuyển sang Sepolia testnet! Chain ID nên là 11155111', 'error');
                     try {
                         await window.ethereum.request({
                             method: 'wallet_switchEthereumChain',
                             params: [{ chainId: '0xaa36a7' }],
                         });
                     } catch (switchError) {
-                        showNotification('Failed to switch network. Please switch manually.', 'error');
+                        if (switchError.code === 4902) { // Chain chưa được thêm
+                            try {
+                                await window.ethereum.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [SEPOLIA_CONFIG],
+                                });
+                            } catch (addError) {
+                                showNotification('Thêm network thất bại. Vui lòng thêm Sepolia thủ công trong MetaMask.', 'error');
+                                return;
+                            }
+                        } else {
+                            showNotification('Chuyển network thất bại. Vui lòng chuyển thủ công.', 'error');
+                            return;
+                        }
                     }
-                    return;
+                    // Sau switch/add thành công, lấy lại network
+                    network = await provider.getNetwork();
+                    if (network.chainId !== SEPOLIA_CHAIN_ID) {
+                        showNotification('Network vẫn chưa đúng. Vui lòng thử lại.', 'error');
+                        return;
+                    }
                 }
 
-                // Khởi tạo Relayer SDK với Sepolia config (cập nhật từ docs 2025)
-                const { createInstance, SepoliaConfig } = window.ZamaFheRelayerSdk; // Global từ UMD, cập nhật namespace nếu cần
+                // Khởi tạo Relayer SDK (giả sử global từ UMD là relayerSdk, điều chỉnh nếu cần dựa trên package)
+                const { createInstance, SepoliaConfig } = relayerSdk; // Có thể là window.relayerSdk nếu UMD export như vậy
                 fhevmInstance = await createInstance(SepoliaConfig);
 
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -254,10 +279,10 @@
                 document.getElementById('subBtn').disabled = false;
                 document.getElementById('refreshBtn').disabled = false;
                 await refreshResult();
-                showNotification(`Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`, 'success');
+                showNotification(`Kết nối thành công: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`, 'success');
             } catch (error) {
-                console.error('Connection error:', error);
-                showNotification('Failed to connect wallet: ' + error.message, 'error');
+                console.error('Lỗi kết nối:', error);
+                showNotification('Kết nối ví thất bại: ' + error.message, 'error');
             }
         }
 
@@ -265,24 +290,24 @@
             try {
                 const value = parseInt(document.getElementById('valueInput').value);
                 if (isNaN(value) || value <= 0) {
-                    showNotification('Enter a positive integer value!', 'error');
+                    showNotification('Nhập giá trị số dương!', 'error');
                     return;
                 }
                 const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
                 const addBtn = document.getElementById('addBtn');
                 addBtn.disabled = true;
                 addBtn.innerHTML = '+ ADD <span class="loading">...</span>';
-                showNotification('Sending transaction...', 'info');
+                showNotification('Đang gửi giao dịch...', 'info');
                 const tx = await contract.add(encrypted, proof);
-                showNotification('Waiting for confirmation...', 'info');
+                showNotification('Đang chờ xác nhận...', 'info');
                 await tx.wait();
-                showNotification(`Added ${value}! Transaction confirmed.`, 'success');
+                showNotification(`Đã cộng ${value}! Giao dịch xác nhận.`, 'success');
                 await refreshResult();
                 addBtn.disabled = false;
                 addBtn.innerHTML = '+ ADD';
             } catch (error) {
-                console.error('Add error:', error);
-                showNotification('Add failed: ' + (error.message || error), 'error');
+                console.error('Lỗi cộng:', error);
+                showNotification('Cộng thất bại: ' + (error.message || error), 'error');
                 document.getElementById('addBtn').disabled = false;
                 document.getElementById('addBtn').innerHTML = '+ ADD';
             }
@@ -292,24 +317,24 @@
             try {
                 const value = parseInt(document.getElementById('valueInput').value);
                 if (isNaN(value) || value <= 0) {
-                    showNotification('Enter a positive integer value!', 'error');
+                    showNotification('Nhập giá trị số dương!', 'error');
                     return;
                 }
                 const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
                 const subBtn = document.getElementById('subBtn');
                 subBtn.disabled = true;
                 subBtn.innerHTML = '- SUB <span class="loading">...</span>';
-                showNotification('Sending transaction...', 'info');
+                showNotification('Đang gửi giao dịch...', 'info');
                 const tx = await contract.subtract(encrypted, proof);
-                showNotification('Waiting for confirmation...', 'info');
+                showNotification('Đang chờ xác nhận...', 'info');
                 await tx.wait();
-                showNotification(`Subtracted ${value}! Transaction confirmed.`, 'success');
+                showNotification(`Đã trừ ${value}! Giao dịch xác nhận.`, 'success');
                 await refreshResult();
                 subBtn.disabled = false;
                 subBtn.innerHTML = '- SUB';
             } catch (error) {
-                console.error('Subtract error:', error);
-                showNotification('Subtract failed: ' + (error.message || error), 'error');
+                console.error('Lỗi trừ:', error);
+                showNotification('Trừ thất bại: ' + (error.message || error), 'error');
                 document.getElementById('subBtn').disabled = false;
                 document.getElementById('subBtn').innerHTML = '- SUB';
             }
@@ -318,17 +343,16 @@
         async function refreshResult() {
             try {
                 if (!contract) return;
-                const encryptedResult = await contract.getResult(); // bytes32
-                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Decrypting...)`;
+                const encryptedResult = await contract.getResult();
+                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Đang giải mã...)`;
 
-                // Decrypt và hiển thị
                 const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
                 document.getElementById('resultDisplay').textContent = decryptedValue.toString();
-                showNotification('Result refreshed and decrypted!', 'success');
+                showNotification('Kết quả đã làm mới và giải mã!', 'success');
             } catch (error) {
-                console.error('Refresh error:', error);
-                showNotification('Failed to refresh/decrypt: ' + (error.message || error), 'error');
-                document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Encrypted)` : '0';
+                console.error('Lỗi làm mới:', error);
+                showNotification('Làm mới/giải mã thất bại: ' + (error.message || error), 'error');
+                document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Mã hóa)` : '0';
             }
         }
 
