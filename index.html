@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://unpkg.com/@zama-fhe/relayer-sdk@latest/dist/index.umd.js"></script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
         * {margin:0;padding:0;box-sizing:border-box;}
         
@@ -363,7 +363,7 @@
     </style>
 </head>
 <body>
-    <header>
+  <header>
         <div class="social-icons">
             <a href="https://x.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
                 <i class="fab fa-x-twitter"></i>
@@ -475,7 +475,7 @@
         });
 
         function createCoin() {
-        const coin = document.createElement('div');
+            const coin = document.createElement('div');
             coin.className = 'coin';
             coin.style.left = Math.random() * 100 + 'vw';
             coin.style.animationDuration = (Math.random() * 3 + 2) + 's';
@@ -484,10 +484,9 @@
             setTimeout(() => coin.remove(), 5000);
         }
         setInterval(createCoin, 500);
-        }
 
         function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
+            const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.innerHTML = `<strong>${type.toUpperCase()}:</strong><br>${message}`;
             document.body.appendChild(notification);
@@ -616,9 +615,76 @@
             }
         }
 
-        // Các hàm performAdd, performSubtract, refreshResult giữ nguyên như code gốc
+        async function performAdd() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (isNaN(value) || value <= 0) {
+                    showNotification('Nhập giá trị số dương!', 'error');
+                    return;
+                }
+                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
+                const addBtn = document.getElementById('addBtn');
+                addBtn.disabled = true;
+                addBtn.innerHTML = '+ ADD <span class="loading">...</span>';
+                showNotification('Đang gửi giao dịch...', 'info');
+                const tx = await contract.add(encrypted, proof);
+                showNotification('Đang chờ xác nhận...', 'info');
+                await tx.wait();
+                showNotification(`Đã cộng ${value}! Giao dịch xác nhận.`, 'success');
+                await refreshResult();
+                addBtn.disabled = false;
+                addBtn.innerHTML = '+ ADD';
+            } catch (error) {
+                console.error('Lỗi cộng:', error);
+                showNotification('Cộng thất bại: ' + (error.message || error), 'error');
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('addBtn').innerHTML = '+ ADD';
+            }
+        }
 
-        // Kiểm tra MetaMask
+        async function performSubtract() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (isNaN(value) || value <= 0) {
+                    showNotification('Nhập giá trị số dương!', 'error');
+                    return;
+                }
+                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
+                const subBtn = document.getElementById('subBtn');
+                subBtn.disabled = true;
+                subBtn.innerHTML = '- SUB <span class="loading">...</span>';
+                showNotification('Đang gửi giao dịch...', 'info');
+                const tx = await contract.subtract(encrypted, proof);
+                showNotification('Đang chờ xác nhận...', 'info');
+                await tx.wait();
+                showNotification(`Đã trừ ${value}! Giao dịch xác nhận.`, 'success');
+                await refreshResult();
+                subBtn.disabled = false;
+                subBtn.innerHTML = '- SUB';
+            } catch (error) {
+                console.error('Lỗi trừ:', error);
+                showNotification('Trừ thất bại: ' + (error.message || error), 'error');
+                document.getElementById('subBtn').disabled = false;
+                document.getElementById('subBtn').innerHTML = '- SUB';
+            }
+        }
+
+        async function refreshResult() {
+            try {
+                if (!contract) return;
+                const encryptedResult = await contract.getResult();
+                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Đang giải mã...)`;
+
+                const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
+                document.getElementById('resultDisplay').textContent = decryptedValue.toString();
+                showNotification('Kết quả đã làm mới và giải mã!', 'success');
+            } catch (error) {
+                console.error('Lỗi làm mới:', error);
+                showNotification('Làm mới/giải mã thất bại: ' + (error.message || error), 'error');
+                document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Mã hóa)` : '0';
+            }
+        }
+
         if (window.ethereum) {
             window.ethereum.on('accountsChanged', (accounts) => {
                 if (accounts.length === 0) {
