@@ -1,0 +1,23 @@
+{
+  "name": "fhe-calculator-sepolia",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@fhevm/hardhat-plugin": "^0.1.0",
+    "@fhevm/solidity": "^0.8.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "dotenv": "^17.2.3",
+    "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "fhevm": "^0.6.2",
+    "fhevm-contracts": "^0.2.4"
+  }
+}
