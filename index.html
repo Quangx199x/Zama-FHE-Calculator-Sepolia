@@ -178,4 +178,135 @@
                 showNotification('Connecting to MetaMask...', 'info');
                 provider = new ethers.BrowserProvider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
-                signer = await provider.getSigner
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+                const network = await provider.getNetwork();
+                console.log('Connected to chain ID:', network.chainId);
+
+                if (network.chainId !== SEPOLIA_CHAIN_ID) {
+                    showNotification('Please switch to Sepolia testnet! Chain ID should be 11155111', 'error');
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0xaa36a7' }],
+                        });
+                    } catch (switchError) {
+                        showNotification('Failed to switch network. Please switch manually.', 'error');
+                    }
+                    return;
+                }
+
+                // Khởi tạo FHEVM SDK với Sepolia config
+                const { createInstance, SepoliaConfig } = ZamaFheRelayerSdk; // Global từ CDN
+                fhevmInstance = await createInstance(SepoliaConfig);
+
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                document.getElementById('networkBadge').textContent = 'SEPOLIA';
+                document.getElementById('walletAddress').textContent = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
+                document.getElementById('walletAddress').style.display = 'block';
+                const connectBtn = document.getElementById('connectBtn');
+                connectBtn.textContent = 'CONNECTED';
+                connectBtn.classList.add('connected');
+                connectBtn.disabled = true;
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('subBtn').disabled = false;
+                document.getElementById('refreshBtn').disabled = false;
+                await refreshResult();
+                showNotification(`Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`, 'success');
+            } catch (error) {
+                console.error('Connection error:', error);
+                showNotification('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function performAdd() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (!value || value <= 0) {
+                    showNotification('Enter a positive value!', 'error');
+                    return;
+                }
+                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
+                const addBtn = document.getElementById('addBtn');
+                addBtn.disabled = true;
+                addBtn.innerHTML = '+ ADD <span class="loading">...</span>';
+                showNotification('Sending transaction...', 'info');
+                const tx = await contract.add(encrypted, proof);
+                showNotification('Waiting for confirmation...', 'info');
+                await tx.wait();
+                showNotification(`Added ${value}! Transaction confirmed.`, 'success');
+                await refreshResult();
+                addBtn.disabled = false;
+                addBtn.innerHTML = '+ ADD';
+            } catch (error) {
+                console.error('Add error:', error);
+                showNotification('Add failed: ' + error.message, 'error');
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('addBtn').innerHTML = '+ ADD';
+            }
+        }
+
+        async function performSubtract() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (!value || value <= 0) {
+                    showNotification('Enter a positive value!', 'error');
+                    return;
+                }
+                const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
+                const subBtn = document.getElementById('subBtn');
+                subBtn.disabled = true;
+                subBtn.innerHTML = '- SUB <span class="loading">...</span>';
+                showNotification('Sending transaction...', 'info');
+                const tx = await contract.subtract(encrypted, proof);
+                showNotification('Waiting for confirmation...', 'info');
+                await tx.wait();
+                showNotification(`Subtracted ${value}! Transaction confirmed.`, 'success');
+                await refreshResult();
+                subBtn.disabled = false;
+                subBtn.innerHTML = '- SUB';
+            } catch (error) {
+                console.error('Subtract error:', error);
+                showNotification('Subtract failed: ' + error.message, 'error');
+                document.getElementById('subBtn').disabled = false;
+                document.getElementById('subBtn').innerHTML = '- SUB';
+            }
+        }
+
+        async function refreshResult() {
+            try {
+                if (!contract) return;
+                const encryptedResult = await contract.getResult(); // bytes32 handle
+                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Decrypting...)`;
+                
+                // Decrypt và hiển thị plaintext
+                const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
+                document.getElementById('resultDisplay').textContent = decryptedValue.toString(); // Hiển thị số plaintext
+                showNotification('Result decrypted!', 'success');
+            } catch (error) {
+                console.error('Refresh error:', error);
+                showNotification('Failed to refresh/decrypt: ' + error.message, 'error');
+                // Fallback hiển thị encrypted nếu decrypt fail
+                document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Encrypted)` : '0';
+            }
+        }
+
+        // Event listeners giữ nguyên
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    location.reload();
+                } else {
+                    connectWallet();
+                }
+            });
+            window.ethereum.on('chainChanged', () => {
+                location.reload();
+            });
+        }
+
+        // CSS cho .loading và @keyframes blink giữ nguyên từ gốc
+    </style>
+</script>
+</body>
+</html>
