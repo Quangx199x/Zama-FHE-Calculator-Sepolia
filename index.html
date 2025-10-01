@@ -6,18 +6,64 @@
     <title>FHE Calculator - Zama</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <!-- Thêm CDN cho Zama Relayer SDK (kiểm tra version mới nhất trên unpkg.com) -->
-    <script src="https://unpkg.com/@zama-fhe/relayer-sdk@0.1.0/dist/index.umd.js"></script> <!-- Thay version nếu cần -->
+    <!-- Cập nhật CDN cho Zama Relayer SDK dựa trên docs mới nhất (kiểm tra unpkg hoặc npm cho version ~0.1.0 hoặc mới hơn vào 2025) -->
+    <script src="https://unpkg.com/@zama.ai/fhevm-relayer-sdk@latest/dist/index.umd.js"></script> <!-- Sử dụng @latest cho phiên bản mới nhất -->
     <style>
-        /* Giữ nguyên CSS từ code gốc */
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         * {margin:0;padding:0;box-sizing:border-box;}
         body { font-family:'Press Start 2P',cursive; background:#1a1a2e; color:#ffd700; overflow-x:hidden; }
-        /* ... (toàn bộ CSS gốc, không thay đổi) ... */
+        body::before { content:''; position:fixed;top:0;left:0;width:100%;height:100%; background-image: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px), repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px); pointer-events:none;z-index:0; }
+        header { position:relative; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; padding:20px 40px; background:#0f0f1e; border-bottom:4px solid #ffd700; box-shadow:0 4px 0 #cc9900; }
+        .social-icons {display:flex;gap:12px;align-items:center;}
+        .social-icons a i { font-size:22px; color:#ffd700; text-shadow:1px 1px 0 #cc9900; transition:transform 0.1s,color 0.2s; }
+        .social-icons a:hover i { color:#ffed4e; transform:translate(-2px,-2px); text-shadow:2px 2px 0 #cc9900; }
+        .logo { font-size:50px; color:#ffd700; text-shadow:3px 3px 0 #cc9900; animation:float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+        nav {display:flex;gap:30px;flex-wrap:wrap;}
+        nav a { color:#ffd700; text-decoration:none; font-size:12px; padding:10px 15px; border:3px solid #ffd700; background:#0f0f1e; transition:all 0.1s; }
+        nav a:hover { background:#ffd700;color:#0f0f1e; transform:translate(-2px,-2px); box-shadow:4px 4px 0 #cc9900; }
+        .wallet-info {display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+        .connect-btn { padding:12px 24px; background:#ffd700;color:#0f0f1e; border:3px solid #ffd700; font-family:'Press Start 2P',cursive; font-size:10px; cursor:pointer; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; white-space:nowrap; }
+        .connect-btn:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 #cc9900; }
+        .connect-btn.connected {background:#00ff00;border-color:#00ff00;}
+        .wallet-address { font-size:10px;color:#00ff00; padding:8px 12px;background:#0f0f1e; border:2px solid #00ff00; }
+        .hero { position:relative; text-align:center; padding:100px 20px; background:linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%); }
+        .hero h1 { font-size:48px; color:#ffd700; text-shadow:5px 5px 0 #cc9900, 10px 10px 0 rgba(0,0,0,0.3); margin-bottom:30px; animation:glitch 5s infinite; }
+        @keyframes glitch { 0%, 90%, 100% {transform:translate(0);} 91% {transform:translate(-2px, 2px);} 92% {transform:translate(2px, -2px);} 93% {transform:translate(-2px, 2px);} }
+        .hero p { font-size:14px; color:#ffed4e; margin-bottom:50px; line-height:1.8; }
+        .calc-container { position:relative; max-width:500px; margin:0 auto; padding:30px; background:#0f0f1e; border:4px solid #ffd700; box-shadow:8px 8px 0 #cc9900, 12px 12px 0 rgba(0,0,0,0.3); }
+        .calc-header { display:flex; justify-content:space-between; margin-bottom:20px; padding-bottom:15px; border-bottom:2px solid #ffd700; }
+        .calc-header h2 {font-size:16px;color:#ffd700;}
+        .network-badge { font-size:10px; padding:5px 10px; background:#1a1a2e; border:2px solid #ffd700; color:#ffd700; }
+        .result-display { background:#1a1a2e; border:3px solid #ffd700; padding:20px; margin-bottom:20px; text-align:center; font-size:20px; color:#00ff00; min-height:50px; display:flex; align-items:center; justify-content:center; word-break:break-all; }
+        .value-input { width:100%; background:transparent; border:2px solid #ffd700; color:#ffd700; font-family:'Press Start 2P', cursive; font-size:18px; padding:10px; text-align:center; margin-bottom:20px; outline:none; }
+        .operation-buttons { display:flex; gap:10px; margin-bottom:20px; }
+        .op-btn { flex:1; padding:15px; background:#ffd700; color:#0f0f1e; border:3px solid #ffd700; font-family:'Press Start 2P', cursive; font-size:14px; cursor:pointer; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; }
+        .op-btn:hover:not(:disabled) { transform:translate(-2px, -2px); box-shadow:6px 6px 0 #cc9900; }
+        .op-btn:disabled { background:#666; border-color:#666; cursor:not-allowed; box-shadow:none; }
+        .calc-btn { width:100%; padding:20px; background:#ffd700; color:#0f0f1e; border:4px solid #ffd700; font-family:'Press Start 2P', cursive; font-size:14px; cursor:pointer; margin-top:20px; transition:all 0.1s; box-shadow:4px 4px 0 #cc9900; }
+        .calc-btn:hover:not(:disabled) { transform:translate(-2px, -2px); box-shadow:6px 6px 0 #cc9900; }
+        .calc-btn:disabled { background:#666; border-color:#666; cursor:not-allowed; box-shadow:none; }
+        .loading { display:inline-block; animation:blink 1s infinite; }
+        @keyframes blink { 0%, 50% {opacity:1;} 51%, 100% {opacity:0;} }
+        .notification { position:fixed; top:100px; right:20px; background:#0f0f1e; border:3px solid #ffd700; padding:20px; max-width:350px; font-size:10px; box-shadow:6px 6px 0 #cc9900; z-index:1000; animation:slideIn 0.3s; }
+        @keyframes slideIn { from {transform:translateX(400px);} to {transform:translateX(0);} }
+        .notification.success {border-color:#00ff00;}
+        .notification.error {border-color:#ff0000;}
+        .features {padding:100px 40px;background:#0f0f1e;}
+        .features-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:40px; max-width:1200px; margin:0 auto; }
+        .feature-card { background:#1a1a2e; border:4px solid #ffd700; padding:30px; transition:all 0.2s; }
+        .feature-card:hover { transform:translate(-4px, -4px); box-shadow:8px 8px 0 #cc9900; }
+        .feature-icon { width:60px; height:60px; background:#ffd700; margin-bottom:20px; }
+        .feature-card h3 { font-size:14px; color:#ffd700; margin-bottom:15px; }
+        .feature-card p { font-size:10px; line-height:1.6; color:#ffed4e; }
+        footer { padding:40px; background:#0f0f1e; border-top:4px solid #ffd700; text-align:center; color:#ffed4e; font-size:10px; }
+        .coin { position:fixed; width:30px; height:30px; background:#ffd700; border:3px solid #cc9900; border-radius:50%; animation:fall linear infinite; z-index:-1; }
+        @keyframes fall { to {transform:translateY(100vh) rotate(360deg);} }
+        @media (max-width:768px) { .hero h1 {font-size:24px;} .hero p {font-size:10px;} nav {flex-direction:column;gap:10px;} .calc-container {margin:20px;} header {padding:15px 20px;} .logo {font-size:18px;} .social-icons a i {font-size:18px;} }
     </style>
 </head>
 <body>
-    <!-- Giữ nguyên HTML body từ code gốc -->
     <header>
         <div class="social-icons">
             <a href="https://x.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
@@ -81,7 +127,6 @@
         <p>ZAMA FHE CALCULATOR | DEMO ON SEPOLIA TESTNET ⛓️</p>
         <p style="margin-top:10px;">Built with Zama FHE & Ethers.js</p>
     </footer>
-
     <script>
         const CONTRACT_ADDRESS = '0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F';
         const SEPOLIA_CHAIN_ID = 11155111n;
@@ -98,7 +143,6 @@
         let contract;
         let fhevmInstance; // Instance của Relayer SDK
 
-        // Các hàm animation và notification giữ nguyên từ code gốc
         function createCoin() {
             const coin = document.createElement('div');
             coin.className = 'coin';
@@ -121,7 +165,6 @@
             }, 5000);
         }
 
-        // Thay mockEncrypt bằng encryptWithSDK (async)
         async function encryptWithSDK(value, contractAddress, userAddress) {
             if (!fhevmInstance) throw new Error('FHEVM SDK not initialized');
             const buffer = fhevmInstance.createEncryptedInput(contractAddress, userAddress);
@@ -133,13 +176,12 @@
             };
         }
 
-        // Thêm hàm decryptWithSDK (async)
         async function decryptWithSDK(encryptedHandle, contractAddress) {
             if (!fhevmInstance || !signer) throw new Error('FHEVM SDK or signer not ready');
             const keypair = fhevmInstance.generateKeypair();
             const handleContractPairs = [{ handle: encryptedHandle, contractAddress }];
             const startTimeStamp = Math.floor(Date.now() / 1000).toString();
-            const durationDays = '10'; // Thời hạn ACL (giây, nhưng dùng days cho demo)
+            const durationDays = '10'; // Thời hạn ACL (demo)
             const contractAddresses = [contractAddress];
 
             const eip712 = fhevmInstance.createEIP712(
@@ -166,7 +208,7 @@
                 durationDays
             );
 
-            return result[encryptedHandle]; // Giá trị plaintext (BigInt)
+            return result[encryptedHandle]; // BigInt plaintext
         }
 
         async function connectWallet() {
@@ -196,8 +238,8 @@
                     return;
                 }
 
-                // Khởi tạo FHEVM SDK với Sepolia config
-                const { createInstance, SepoliaConfig } = ZamaFheRelayerSdk; // Global từ CDN
+                // Khởi tạo Relayer SDK với Sepolia config (cập nhật từ docs 2025)
+                const { createInstance, SepoliaConfig } = window.ZamaFheRelayerSdk; // Global từ UMD, cập nhật namespace nếu cần
                 fhevmInstance = await createInstance(SepoliaConfig);
 
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
@@ -222,8 +264,8 @@
         async function performAdd() {
             try {
                 const value = parseInt(document.getElementById('valueInput').value);
-                if (!value || value <= 0) {
-                    showNotification('Enter a positive value!', 'error');
+                if (isNaN(value) || value <= 0) {
+                    showNotification('Enter a positive integer value!', 'error');
                     return;
                 }
                 const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
@@ -240,7 +282,7 @@
                 addBtn.innerHTML = '+ ADD';
             } catch (error) {
                 console.error('Add error:', error);
-                showNotification('Add failed: ' + error.message, 'error');
+                showNotification('Add failed: ' + (error.message || error), 'error');
                 document.getElementById('addBtn').disabled = false;
                 document.getElementById('addBtn').innerHTML = '+ ADD';
             }
@@ -249,8 +291,8 @@
         async function performSubtract() {
             try {
                 const value = parseInt(document.getElementById('valueInput').value);
-                if (!value || value <= 0) {
-                    showNotification('Enter a positive value!', 'error');
+                if (isNaN(value) || value <= 0) {
+                    showNotification('Enter a positive integer value!', 'error');
                     return;
                 }
                 const { encrypted, proof } = await encryptWithSDK(value, CONTRACT_ADDRESS, userAddress);
@@ -267,7 +309,7 @@
                 subBtn.innerHTML = '- SUB';
             } catch (error) {
                 console.error('Subtract error:', error);
-                showNotification('Subtract failed: ' + error.message, 'error');
+                showNotification('Subtract failed: ' + (error.message || error), 'error');
                 document.getElementById('subBtn').disabled = false;
                 document.getElementById('subBtn').innerHTML = '- SUB';
             }
@@ -276,22 +318,20 @@
         async function refreshResult() {
             try {
                 if (!contract) return;
-                const encryptedResult = await contract.getResult(); // bytes32 handle
+                const encryptedResult = await contract.getResult(); // bytes32
                 document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Decrypting...)`;
-                
-                // Decrypt và hiển thị plaintext
+
+                // Decrypt và hiển thị
                 const decryptedValue = await decryptWithSDK(encryptedResult, CONTRACT_ADDRESS);
-                document.getElementById('resultDisplay').textContent = decryptedValue.toString(); // Hiển thị số plaintext
-                showNotification('Result decrypted!', 'success');
+                document.getElementById('resultDisplay').textContent = decryptedValue.toString();
+                showNotification('Result refreshed and decrypted!', 'success');
             } catch (error) {
                 console.error('Refresh error:', error);
-                showNotification('Failed to refresh/decrypt: ' + error.message, 'error');
-                // Fallback hiển thị encrypted nếu decrypt fail
+                showNotification('Failed to refresh/decrypt: ' + (error.message || error), 'error');
                 document.getElementById('resultDisplay').textContent = encryptedResult ? `${encryptedResult.slice(0, 10)}... (Encrypted)` : '0';
             }
         }
 
-        // Event listeners giữ nguyên
         if (window.ethereum) {
             window.ethereum.on('accountsChanged', (accounts) => {
                 if (accounts.length === 0) {
@@ -304,9 +344,6 @@
                 location.reload();
             });
         }
-
-        // CSS cho .loading và @keyframes blink giữ nguyên từ gốc
-    </style>
-</script>
+    </script>
 </body>
 </html>
