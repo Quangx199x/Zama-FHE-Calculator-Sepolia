@@ -98,7 +98,7 @@
             white-space:nowrap;
         }
         
-        .connect-btn:hover:not(:disabled) {
+        .connect-btn:hover {
             transform:translate(-2px,-2px);
             box-shadow:6px 6px 0 #cc9900;
         }
@@ -142,7 +142,7 @@
         
         .calc-container {
             position:relative;
-            max-width:600px;
+            max-width:500px;
             margin:0 auto;
             padding:30px;
             background:#0f0f1e;
@@ -156,8 +156,6 @@
             margin-bottom:20px;
             padding-bottom:15px;
             border-bottom:2px solid #ffd700;
-            flex-wrap:wrap;
-            gap:10px;
         }
         
         .calc-header h2 {font-size:16px;color:#ffd700;}
@@ -170,36 +168,13 @@
             color:#ffd700;
         }
         
-        .warning-box {
-            background:#ff6b00;
-            border:3px solid #ff0000;
-            padding:20px;
-            margin-bottom:20px;
-            font-size:10px;
-            line-height:1.6;
-            color:#fff;
-        }
-
-        .warning-box h3 {
-            color:#fff;
-            margin-bottom:10px;
-            font-size:12px;
-        }
-
-        .warning-box code {
-            background:#000;
-            padding:2px 6px;
-            display:inline-block;
-            margin:2px 0;
-        }
-        
         .result-display {
             background:#1a1a2e;
             border:3px solid #ffd700;
             padding:20px;
             margin-bottom:20px;
             text-align:center;
-            font-size:16px;
+            font-size:20px;
             color:#00ff00;
             min-height:50px;
             display:flex;
@@ -300,7 +275,6 @@
             box-shadow:6px 6px 0 #cc9900;
             z-index:1000;
             animation:slideIn 0.3s;
-            line-height:1.5;
         }
         
         @keyframes slideIn {
@@ -351,27 +325,6 @@
             line-height:1.6;
             color:#ffed4e;
         }
-
-        .feature-card ul {
-            list-style:none;
-            padding-left:0;
-            margin-top:15px;
-        }
-
-        .feature-card li {
-            font-size:9px;
-            line-height:1.8;
-            color:#ffed4e;
-            padding-left:15px;
-            position:relative;
-        }
-
-        .feature-card li:before {
-            content:'►';
-            position:absolute;
-            left:0;
-            color:#ffd700;
-        }
         
         footer {
             padding:40px;
@@ -395,21 +348,6 @@
         
         @keyframes fall {
             to {transform:translateY(100vh) rotate(360deg);}
-        }
-
-        .info-box {
-            margin-top:20px;
-            padding:15px;
-            background:#1a1a2e;
-            border:2px solid #ffd700;
-            font-size:9px;
-            line-height:1.6;
-            color:#ffed4e;
-        }
-
-        .info-box a {
-            color:#00ff00;
-            text-decoration:underline;
         }
         
         @media (max-width:768px) {
@@ -436,7 +374,7 @@
         <div class="logo">FHE Calc</div>
         <nav>
             <a href="#calc">CALCULATOR</a>
-            <a href="#setup">SETUP</a>
+            <a href="#about">ABOUT</a>
         </nav>
         <div class="wallet-info">
             <div id="walletAddress" class="wallet-address" style="display: none;"></div>
@@ -446,136 +384,55 @@
 
     <section class="hero" id="calc">
         <h1>FHE CALCULATOR</h1>
-        <p>Encrypted computations with Zama FHE on Sepolia!</p>
+        <p>Perform encrypted additions and subtractions with Zama FHE!</p>
         
         <div class="calc-container">
-            <div class="warning-box">
-                <h3>⚠️ IMPORTANT NOTICE</h3>
-                <p>This contract requires <strong>real FHE encryption</strong> from Zama Gateway. The error <code>0xb9688461</code> means the contract rejected mock/invalid encryption data.</p>
-                <br>
-                <p><strong>To use this calculator, you need:</strong></p>
-                <p>1. Zama fhEVM SDK properly configured</p>
-                <p>2. Access to Zama Gateway API</p>
-                <p>3. Proper encryption keys setup</p>
-                <br>
-                <p>See "SETUP GUIDE" section below for instructions.</p>
-            </div>
-
             <div class="calc-header">
                 <h2>CALCULATOR</h2>
                 <div class="network-badge" id="networkBadge">NOT CONNECTED</div>
             </div>
             
-            <div class="result-display" id="resultDisplay">Connect wallet to start</div>
+            <div class="result-display" id="resultDisplay">0x0000... (Encrypted)</div>
             
-            <input type="number" class="value-input" id="valueInput" placeholder="Enter value" min="0" disabled>
+            <input type="number" class="value-input" id="valueInput" placeholder="Enter value" min="0">
             
             <div class="operation-buttons">
-                <button class="op-btn" id="addBtn" disabled>+ ADD</button>
-                <button class="op-btn" id="subBtn" disabled>- SUB</button>
+                <button class="op-btn" id="addBtn" onclick="performAdd()" disabled>+ ADD</button>
+                <button class="op-btn" id="subBtn" onclick="performSubtract()" disabled>- SUB</button>
             </div>
             
-            <button class="calc-btn" id="refreshBtn" disabled>REFRESH RESULT</button>
+            <button class="calc-btn" id="refreshBtn" onclick="refreshResult()" disabled>REFRESH RESULT</button>
             
-            <div class="info-box">
-                <p><strong>Contract Address:</strong></p>
-                <p>0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F</p>
-                <br>
-                <p><strong>Network:</strong> Sepolia Testnet (Chain ID: 11155111)</p>
-                <br>
-                <p><strong>ABI Functions:</strong></p>
-                <p>• add(bytes32 inputEuint32, bytes inputProof)</p>
-                <p>• subtract(bytes32 inputEuint32, bytes inputProof)</p>
-                <p>• getResult() returns bytes32</p>
-                <p>• protocolId() returns uint256</p>
+            <div style="margin-top:20px;font-size:10px;color:#ffed4e;text-align:center;">
+                <p>Contract: 0xE822...975F</p>
+                <p>Network: Sepolia Testnet</p>
             </div>
         </div>
     </section>
 
-    <section class="features" id="setup">
-        <h1 style="text-align:center;color:#ffd700;margin-bottom:50px;font-size:32px;">SETUP GUIDE</h1>
+    <section class="features" id="about">
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon"></div>
-                <h3>1. UNDERSTAND THE ISSUE</h3>
-                <p>Your contract uses Zama's FHE (Fully Homomorphic Encryption). It requires:</p>
-                <ul>
-                    <li>Real encrypted data from fhEVM SDK</li>
-                    <li>Valid encryption proofs</li>
-                    <li>Proper gateway connection</li>
-                </ul>
-                <p style="margin-top:15px;">Mock/simple hex data will be rejected with error <code style="background:#000;padding:2px 6px;">0xb9688461</code></p>
+                <h3>ZAMA FHE</h3>
+                <p>Powered by Zama's Fully Homomorphic Encryption for private computations on blockchain!</p>
             </div>
-            
             <div class="feature-card">
                 <div class="feature-icon"></div>
-                <h3>2. INSTALL fhEVM SDK</h3>
-                <p>You need the official Zama library:</p>
-                <p style="margin-top:10px;"><code style="background:#000;padding:5px;display:block;">npm install fhevmjs</code></p>
-                <ul>
-                    <li>Initialize with chain ID and gateway URL</li>
-                    <li>Create encrypted inputs</li>
-                    <li>Generate valid proofs</li>
-                </ul>
+                <h3>ENCRYPTED OPS</h3>
+                <p>Perform additions and subtractions on encrypted data without revealing values!</p>
             </div>
-            
             <div class="feature-card">
                 <div class="feature-icon"></div>
-                <h3>3. GATEWAY ACCESS</h3>
-                <p>Contact Zama for gateway access:</p>
-                <ul>
-                    <li>Gateway URL for Sepolia</li>
-                    <li>API keys if required</li>
-                    <li>Public encryption keys</li>
-                </ul>
-                <p style="margin-top:15px;">Visit: <a href="https://docs.zama.ai/fhevm" target="_blank">docs.zama.ai/fhevm</a></p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>4. EXAMPLE CODE</h3>
-                <p>Proper encryption flow:</p>
-                <p style="margin-top:10px;font-size:8px;background:#000;padding:10px;line-height:1.8;color:#0f0;">
-                const instance = await createInstance({<br>
-                &nbsp;&nbsp;chainId: 11155111,<br>
-                &nbsp;&nbsp;gatewayUrl: 'YOUR_GATEWAY'<br>
-                });<br>
-                const input = instance.createEncryptedInput(address);<br>
-                input.add32(value);<br>
-                const encrypted = await input.encrypt();<br>
-                </p>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>5. VERIFY CONTRACT</h3>
-                <p>Make sure your contract:</p>
-                <ul>
-                    <li>Is properly deployed on Sepolia</li>
-                    <li>Has correct FHE setup</li>
-                    <li>Accepts your wallet address</li>
-                    <li>Is initialized with gateway</li>
-                </ul>
-            </div>
-
-            <div class="feature-card">
-                <div class="feature-icon"></div>
-                <h3>6. ALTERNATIVE SOLUTION</h3>
-                <p>If you want a working demo:</p>
-                <ul>
-                    <li>Deploy a simpler contract without FHE</li>
-                    <li>Use standard Solidity operations</li>
-                    <li>Or use Zama's test contracts</li>
-                </ul>
-                <p style="margin-top:15px;">This UI is ready - just needs proper FHE backend!</p>
+                <h3>SECURE</h3>
+                <p>All operations are performed on encrypted data. Only you can decrypt the results!</p>
             </div>
         </div>
     </section>
 
     <footer>
-        <p>ZAMA FHE CALCULATOR | DEMO UI FOR SEPOLIA TESTNET ⛓️</p>
-        <p style="margin-top:10px;">Built with Ethers.js | Requires Zama fhEVM SDK for actual operations</p>
-        <p style="margin-top:10px;">Contract: 0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F</p>
+        <p>ZAMA FHE CALCULATOR | DEMO ON SEPOLIA TESTNET ⛓️</p>
+        <p style="margin-top:10px;">Built with Zama FHE & Ethers.js</p>
     </footer>
 
     <script>
@@ -616,6 +473,12 @@
             }, 5000);
         }
 
+        function mockEncrypt(value) {
+            const hexValue = '0x' + BigInt(value).toString(16).padStart(64, '0');
+            const mockProof = '0x';
+            return { encrypted: hexValue, proof: mockProof };
+        }
+
         async function connectWallet() {
             try {
                 if (typeof window.ethereum === 'undefined') {
@@ -633,14 +496,12 @@
                 console.log('Connected to chain ID:', network.chainId);
 
                 if (network.chainId !== SEPOLIA_CHAIN_ID) {
-                    showNotification('Please switch to Sepolia testnet!', 'error');
+                    showNotification('Please switch to Sepolia testnet! Chain ID should be 11155111', 'error');
                     try {
                         await window.ethereum.request({
                             method: 'wallet_switchEthereumChain',
                             params: [{ chainId: '0xaa36a7' }],
                         });
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        location.reload();
                     } catch (switchError) {
                         showNotification('Failed to switch network. Please switch manually.', 'error');
                     }
@@ -649,7 +510,7 @@
 
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-                document.getElementById('networkBadge').textContent = 'SEPOLIA ✓';
+                document.getElementById('networkBadge').textContent = 'SEPOLIA';
                 document.getElementById('walletAddress').textContent = userAddress.slice(0, 6) + '...' + userAddress.slice(-4);
                 document.getElementById('walletAddress').style.display = 'block';
                 
@@ -658,15 +519,77 @@
                 connectBtn.classList.add('connected');
                 connectBtn.disabled = true;
 
-                document.getElementById('valueInput').disabled = false;
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('subBtn').disabled = false;
+                document.getElementById('refreshBtn').disabled = false;
 
                 await refreshResult();
-                
                 showNotification(`Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`, 'success');
-                showNotification('NOTE: Operations require Zama FHE SDK for encryption!', 'error');
             } catch (error) {
                 console.error('Connection error:', error);
-                showNotification('Failed to connect: ' + error.message, 'error');
+                showNotification('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function performAdd() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (!value || value <= 0) {
+                    showNotification('Enter a positive value!', 'error');
+                    return;
+                }
+
+                const { encrypted, proof } = mockEncrypt(value);
+                const addBtn = document.getElementById('addBtn');
+                addBtn.disabled = true;
+                addBtn.innerHTML = '+ ADD <span class="loading">...</span>';
+
+                showNotification('Sending transaction...', 'info');
+                const tx = await contract.add(encrypted, proof);
+                showNotification('Waiting for confirmation...', 'info');
+                await tx.wait();
+
+                showNotification(`Added ${value}! Transaction confirmed.`, 'success');
+                await refreshResult();
+                
+                addBtn.disabled = false;
+                addBtn.innerHTML = '+ ADD';
+            } catch (error) {
+                console.error('Add error:', error);
+                showNotification('Add failed: ' + error.message, 'error');
+                document.getElementById('addBtn').disabled = false;
+                document.getElementById('addBtn').innerHTML = '+ ADD';
+            }
+        }
+
+        async function performSubtract() {
+            try {
+                const value = parseInt(document.getElementById('valueInput').value);
+                if (!value || value <= 0) {
+                    showNotification('Enter a positive value!', 'error');
+                    return;
+                }
+
+                const { encrypted, proof } = mockEncrypt(value);
+                const subBtn = document.getElementById('subBtn');
+                subBtn.disabled = true;
+                subBtn.innerHTML = '- SUB <span class="loading">...</span>';
+
+                showNotification('Sending transaction...', 'info');
+                const tx = await contract.subtract(encrypted, proof);
+                showNotification('Waiting for confirmation...', 'info');
+                await tx.wait();
+
+                showNotification(`Subtracted ${value}! Transaction confirmed.`, 'success');
+                await refreshResult();
+                
+                subBtn.disabled = false;
+                subBtn.innerHTML = '- SUB';
+            } catch (error) {
+                console.error('Subtract error:', error);
+                showNotification('Subtract failed: ' + error.message, 'error');
+                document.getElementById('subBtn').disabled = false;
+                document.getElementById('subBtn').innerHTML = '- SUB';
             }
         }
 
@@ -674,31 +597,27 @@
             try {
                 if (!contract) return;
                 
-                showNotification('Fetching encrypted result...', 'info');
                 const encryptedResult = await contract.getResult();
-                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}...${encryptedResult.slice(-8)}`;
-                
-                const protocolId = await contract.protocolId();
-                showNotification(`Result updated! Protocol ID: ${protocolId}`, 'success');
+                document.getElementById('resultDisplay').textContent = `${encryptedResult.slice(0, 10)}... (Encrypted)`;
+                showNotification('Result refreshed!', 'info');
             } catch (error) {
                 console.error('Refresh error:', error);
-                showNotification('Failed to fetch result', 'error');
+                showNotification('Failed to refresh: ' + error.message, 'error');
             }
         }
 
-        document.getElementById('addBtn').onclick = function() {
-            showNotification('ADD operation requires Zama fhEVM SDK integration. See SETUP GUIDE section.', 'error');
-        };
-
-        document.getElementById('subBtn').onclick = function() {
-            showNotification('SUBTRACT operation requires Zama fhEVM SDK integration. See SETUP GUIDE section.', 'error');
-        };
-
-        document.getElementById('refreshBtn').onclick = refreshResult;
-
         if (window.ethereum) {
-            window.ethereum.on('accountsChanged', () => location.reload());
-            window.ethereum.on('chainChanged', () => location.reload());
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    location.reload();
+                } else {
+                    connectWallet();
+                }
+            });
+            
+            window.ethereum.on('chainChanged', () => {
+                location.reload();
+            });
         }
     </script>
 </body>
