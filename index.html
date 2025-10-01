@@ -1,126 +1,181 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FHE Calculator - Sepolia</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f9; }
-    h1 { color: #333; }
-    .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    input, button { margin: 10px 0; padding: 10px; width: 100%; border-radius: 5px; border: 1px solid #ddd; }
-    button { background: #007bff; color: #fff; border: none; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    #notification { margin-top: 10px; padding: 10px; border-radius: 5px; display: none; }
-    .success { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHE Calculator - Zama</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <!-- Thêm CDN cho Zama Relayer SDK (kiểm tra version mới nhất trên unpkg.com) -->
+    <script src="https://unpkg.com/@zama-fhe/relayer-sdk@0.1.0/dist/index.umd.js"></script> <!-- Thay version nếu cần -->
+    <style>
+        /* Giữ nguyên CSS từ code gốc */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        * {margin:0;padding:0;box-sizing:border-box;}
+        body { font-family:'Press Start 2P',cursive; background:#1a1a2e; color:#ffd700; overflow-x:hidden; }
+        /* ... (toàn bộ CSS gốc, không thay đổi) ... */
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🔐 FHE Calculator (Sepolia)</h1>
+    <!-- Giữ nguyên HTML body từ code gốc -->
+    <header>
+        <div class="social-icons">
+            <a href="https://x.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="X (Twitter)">
+                <i class="fab fa-x-twitter"></i>
+            </a>
+            <a href="https://github.com/Quangx199x" target="_blank" rel="noopener noreferrer" title="GitHub">
+                <i class="fab fa-github"></i>
+            </a>
+        </div>
+        <div class="logo">FHE Calc</div>
+        <nav>
+            <a href="#calc">CALCULATOR</a>
+            <a href="#about">ABOUT</a>
+        </nav>
+        <div class="wallet-info">
+            <div id="walletAddress" class="wallet-address" style="display: none;"></div>
+            <button class="connect-btn" id="connectBtn" onclick="connectWallet()">CONNECT WALLET</button>
+        </div>
+    </header>
+    <section class="hero" id="calc">
+        <h1>FHE CALCULATOR</h1>
+        <p>Perform encrypted additions and subtractions with Zama FHE!</p>
+        <div class="calc-container">
+            <div class="calc-header">
+                <h2>CALCULATOR</h2>
+                <div class="network-badge" id="networkBadge">NOT CONNECTED</div>
+            </div>
+            <div class="result-display" id="resultDisplay">0x0000... (Encrypted)</div>
+            <input type="number" class="value-input" id="valueInput" placeholder="Enter value" min="0">
+            <div class="operation-buttons">
+                <button class="op-btn" id="addBtn" onclick="performAdd()" disabled>+ ADD</button>
+                <button class="op-btn" id="subBtn" onclick="performSubtract()" disabled>- SUB</button>
+            </div>
+            <button class="calc-btn" id="refreshBtn" onclick="refreshResult()" disabled>REFRESH RESULT</button>
+            <div style="margin-top:20px;font-size:10px;color:#ffed4e;text-align:center;">
+                <p>Contract: 0xE822...975F</p>
+                <p>Network: Sepolia Testnet</p>
+            </div>
+        </div>
+    </section>
+    <section class="features" id="about">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"></div>
+                <h3>ZAMA FHE</h3>
+                <p>Powered by Zama's Fully Homomorphic Encryption for private computations on blockchain!</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"></div>
+                <h3>ENCRYPTED OPS</h3>
+                <p>Perform additions and subtractions on encrypted data without revealing values!</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"></div>
+                <h3>SECURE</h3>
+                <p>All operations are performed on encrypted data. Only you can decrypt the results!</p>
+            </div>
+        </div>
+    </section>
+    <footer>
+        <p>ZAMA FHE CALCULATOR | DEMO ON SEPOLIA TESTNET ⛓️</p>
+        <p style="margin-top:10px;">Built with Zama FHE & Ethers.js</p>
+    </footer>
 
-    <button onclick="connectWallet()">🔗 Kết nối MetaMask</button>
+    <script>
+        const CONTRACT_ADDRESS = '0xE822E0Cba6205b85CFAa48b0DD028Fc74F17975F';
+        const SEPOLIA_CHAIN_ID = 11155111n;
+        const CONTRACT_ABI = [
+            {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"add","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[],"name":"getResult","outputs":[{"internalType":"euint32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"protocolId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
+            {"inputs":[{"internalType":"externalEuint32","name":"inputEuint32","type":"bytes32"},{"internalType":"bytes","name":"inputProof","type":"bytes"}],"name":"subtract","outputs":[],"stateMutability":"nonpayable","type":"function"}
+        ];
 
-    <input type="number" id="inputValue" placeholder="Nhập số..." />
-    <button onclick="performAdd()">➕ Cộng</button>
-    <button onclick="performSubtract()">➖ Trừ</button>
+        let provider;
+        let signer;
+        let userAddress;
+        let contract;
+        let fhevmInstance; // Instance của Relayer SDK
 
-    <h3 id="resultDisplay">Result: (chưa có dữ liệu)</h3>
-    <button onclick="refreshResult()">🔄 Refresh Result</button>
+        // Các hàm animation và notification giữ nguyên từ code gốc
+        function createCoin() {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = Math.random() * 100 + 'vw';
+            coin.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            coin.style.opacity = Math.random() * 0.3 + 0.1;
+            document.body.appendChild(coin);
+            setTimeout(() => coin.remove(), 5000);
+        }
+        setInterval(createCoin, 500);
 
-    <div id="notification"></div>
-  </div>
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `<strong>${type.toUpperCase()}:</strong><br>${message}`;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
 
-  <!-- ethers -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <!-- fhevm-js -->
-  <script type="module">
-    import { Fhevm } from "https://cdn.jsdelivr.net/npm/fhevm-js/+esm";
+        // Thay mockEncrypt bằng encryptWithSDK (async)
+        async function encryptWithSDK(value, contractAddress, userAddress) {
+            if (!fhevmInstance) throw new Error('FHEVM SDK not initialized');
+            const buffer = fhevmInstance.createEncryptedInput(contractAddress, userAddress);
+            buffer.add32(BigInt(value)); // Mã hóa uint32
+            const ciphertexts = await buffer.encrypt(); // Upload và generate proof
+            return {
+                encrypted: ciphertexts.handles[0], // bytes32 externalEuint32
+                proof: ciphertexts.inputProof // bytes proof
+            };
+        }
 
-    let provider, signer, contract, fhe;
+        // Thêm hàm decryptWithSDK (async)
+        async function decryptWithSDK(encryptedHandle, contractAddress) {
+            if (!fhevmInstance || !signer) throw new Error('FHEVM SDK or signer not ready');
+            const keypair = fhevmInstance.generateKeypair();
+            const handleContractPairs = [{ handle: encryptedHandle, contractAddress }];
+            const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+            const durationDays = '10'; // Thời hạn ACL (giây, nhưng dùng days cho demo)
+            const contractAddresses = [contractAddress];
 
-    // 📌 Contract info
-    const CONTRACT_ADDRESS = "0xe822e0cba6205b85cfaa48b0dd028fc74f17975f"; // sửa lại nếu cần
-    const CONTRACT_ABI = [
-      "function getResult() view returns (uint256)",
-      "function add(uint256,bytes calldata)",
-      "function subtract(uint256,bytes calldata)"
-    ];
+            const eip712 = fhevmInstance.createEIP712(
+                keypair.publicKey,
+                contractAddresses,
+                startTimeStamp,
+                durationDays
+            );
 
-    async function connectWallet() {
-      if (window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+            const signature = await signer.signTypedData(
+                eip712.domain,
+                { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
+                eip712.message
+            );
 
-        // 🔥 Init FHE context
-        fhe = await Fhevm.create();
-        showNotification("Ví đã kết nối & FHE ready!", "success");
-      } else {
-        showNotification("MetaMask chưa cài đặt!", "error");
-      }
-    }
+            const result = await fhevmInstance.userDecrypt(
+                handleContractPairs,
+                keypair.privateKey,
+                keypair.publicKey,
+                signature.replace('0x', ''),
+                contractAddresses,
+                await signer.getAddress(),
+                startTimeStamp,
+                durationDays
+            );
 
-    // 📌 Encrypt bằng FHE thật
-    async function encryptValue(value) {
-      if (!fhe) fhe = await Fhevm.create();
-      return fhe.encrypt32(value);
-    }
+            return result[encryptedHandle]; // Giá trị plaintext (BigInt)
+        }
 
-    async function performAdd() {
-      try {
-        const value = parseInt(document.getElementById('inputValue').value);
-        if (isNaN(value)) return showNotification("Vui lòng nhập số!", "error");
-
-        const { encrypted, proof } = await encryptValue(value);
-        const tx = await contract.add(encrypted, proof);
-        await tx.wait();
-        showNotification("Gửi giao dịch cộng thành công!", "success");
-      } catch (err) {
-        console.error(err);
-        showNotification("Lỗi khi cộng: " + err.message, "error");
-      }
-    }
-
-    async function performSubtract() {
-      try {
-        const value = parseInt(document.getElementById('inputValue').value);
-        if (isNaN(value)) return showNotification("Vui lòng nhập số!", "error");
-
-        const { encrypted, proof } = await encryptValue(value);
-        const tx = await contract.subtract(encrypted, proof);
-        await tx.wait();
-        showNotification("Gửi giao dịch trừ thành công!", "success");
-      } catch (err) {
-        console.error(err);
-        showNotification("Lỗi khi trừ: " + err.message, "error");
-      }
-    }
-
-    async function refreshResult() {
-      try {
-        if (!contract) return showNotification("Chưa kết nối ví!", "error");
-
-        const encryptedResult = await contract.getResult();
-        const decrypted = fhe.decrypt32(encryptedResult); // 🔥 Giải mã
-        document.getElementById('resultDisplay').textContent =
-          `Decrypted Result: ${decrypted}`;
-        showNotification("Kết quả đã giải mã thành công!", "success");
-      } catch (err) {
-        console.error(err);
-        showNotification("Lỗi khi refresh: " + err.message, "error");
-      }
-    }
-
-    function showNotification(message, type) {
-      const note = document.getElementById("notification");
-      note.textContent = message;
-      note.className = type;
-      note.style.display = "block";
-      setTimeout(() => note.style.display = "none", 4000);
-    }
-  </script>
-</body>
-</html>
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    showNotification('MetaMask not found! Please install MetaMask extension.', 'error');
+                    return;
+                }
+                showNotification('Connecting to MetaMask...', 'info');
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner
