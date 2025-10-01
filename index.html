@@ -6,10 +6,9 @@
     <title>FHE Calculator - Zama</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-    <!-- Cập nhật CDN đúng cho Zama Relayer SDK (dựa trên package @zama-fhe/relayer-sdk) -->
     <script src="https://unpkg.com/@zama-fhe/relayer-sdk@latest/dist/index.umd.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press Start 2P&display=swap');
         * {margin:0;padding:0;box-sizing:border-box;}
         body { font-family:'Press Start 2P',cursive; background:#1a1a2e; color:#ffd700; overflow-x:hidden; }
         body::before { content:''; position:fixed;top:0;left:0;width:100%;height:100%; background-image: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px), repeating-linear-gradient(90deg,transparent,transparent 2px,rgba(255,215,0,0.03) 2px,rgba(255,215,0,0.03) 4px); pointer-events:none;z-index:0; }
@@ -263,8 +262,8 @@
                     }
                 }
 
-                // Khởi tạo Relayer SDK (giả sử global từ UMD là relayerSdk, điều chỉnh nếu cần dựa trên package)
-                const { createInstance, SepoliaConfig } = relayerSdk; // Có thể là window.relayerSdk nếu UMD export như vậy
+                // Khởi tạo Relayer SDK với Sepolia config
+                const { createInstance, SepoliaConfig } = window.relayerSdk; // Sửa ở đây, sử dụng window.relayerSdk
                 fhevmInstance = await createInstance(SepoliaConfig);
 
                 contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
