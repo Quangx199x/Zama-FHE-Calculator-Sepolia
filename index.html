@@ -273,7 +273,7 @@ throw new Error("Wrong network. Please switch to Sepolia (11155111).");
 signer = provider.getSigner();
 account = await signer.getAddress();
 // FIX: Pass RPC URL string cho init (lấy từ provider connectionUrl nếu có, hoặc hardcode)
-const rpcUrl = provider.connection.url || 'https://etherscan.io/myapikey_stats?apikey=8ICJ99N4XPVPJIVZS3K44U4IKQVTNEC6JI';  // Thay PROJECT_ID
+const rpcUrl = provider.connection.url || 'https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID';  // Thay PROJECT_ID
 fhevmInstance = await initFhevmSdk(rpcUrl);  // FIX: Truyền string RPC
 if (!fhevmInstance) {
 throw new Error("FHE SDK failed to initialize. Cannot proceed.");
@@ -423,7 +423,7 @@ logMessage('[INIT] DOM Content Loaded. Attaching event listeners...', 'info');
 document.getElementById('connectBtn').addEventListener('click', connectWallet);
 document.getElementById('bidBtn').addEventListener('click', placeBid);
 document.getElementById('revealBtn').addEventListener('click', requestDecryptResults);
-// 2. Khởi tạo timer tạm thời Grok
+// 2. Khởi tạo timer tạm thời
 auctionEndTime = Date.now() + 60000;
 startAuctionTimer();
 });
