@@ -126,7 +126,7 @@
         </div>
     </div>
     
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@zama-fhe/relayer-sdk@latest/dist/relayer-sdk.min.js"></script>
 
     <script defer>
@@ -134,7 +134,7 @@
         
         const CONTRACT_ADDRESS = '0x4140e9d65f5161c15843bd69413b691388230341'; 
         
-        // 🚨 CẬP NHẬT ABI: Sử dụng Full ABI bạn cung cấp
+        // 🚨 ABI: Sử dụng Full ABI đã cập nhật
         const FHE_AUCTION_ABI = [{"inputs":[{"internalType":"uint256","name":"_durationInSeconds","type":"uint256"},{"internalType":"uint256","name":"_minDeposit","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"HandlesAlreadySavedForRequestID","type":"error"},{"inputs":[],"name":"InvalidKMSSignatures","type":"error"},{"inputs":[],"name":"InvalidShortString","type":"error"},{"inputs":[],"name":"NoHandleFoundForRequestID","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"finalDeposit","type":"uint256"}],"name":"AuctionFinished","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"bidder","type":"address"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isNewLeader","type":"bool"}],"name":"BidReceived","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"bidder","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"BidderWithdrew","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestID","type":"uint256"}],"name":"DecryptionFulfilled","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"requestId","type":"uint256"}],"name":"DecryptionRequested","type":"event"},{"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"recipient","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RefundIssued","type":"event"},{"stateMutability":"payable","type":"fallback"},{"inputs":[],"name":"auctionEndTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"auctionFinalized","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"externalEuint64","name":"encryptedBid","type":"bytes32"},{"internalType":"bytes","name":"proof","type":"bytes"}],"name":"bid","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"currentLeadBidder","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentLeadDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"emergencyCancel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"finalizeAuction","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAuctionEndTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getCurrentLeadBidder","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getCurrentLeadDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getMinBidDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAuctionFinalized","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"bidder","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"manualRefund","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"minBidDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"bytes","name":"cleartexts","type":"bytes"},{"internalType":"bytes","name":"decryptionProof","type":"bytes"}],"name":"onDecryptionCallback","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"protocolId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"bidder","type":"address"}],"name":"requestDecryptBidderBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"requestDecryptMaxBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newLeader","type":"address"},{"internalType":"uint256","name":"newDeposit","type":"uint256"}],"name":"updateLeaderAfterReveal","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"winningBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"withdrawWinnings","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}];
 
         const SEPOLIA_CHAIN_ID = 11155111; 
@@ -146,11 +146,8 @@
         let fheAuctionContract;
         let fhevmInstance = null; 
         let timerInterval; 
-        
-        // Trạng thái đấu giá 
         let minDepositWei; 
         let auctionEndTime = 0; 
-        let auctionFinalized = false;
         
         // --- UTILITY FUNCTIONS ---
         function formatLogTime() {
@@ -208,11 +205,10 @@
             }
         }
 
-        // --- CONTRACT STATE & EVENTS ---
+        // --- CONTRACT STATE & EVENTS (Giữ nguyên) ---
 
         async function getAuctionState() {
             try {
-                // Đảm bảo ethers đã load trước khi sử dụng
                 if (typeof ethers === 'undefined') return;
 
                 minDepositWei = ethers.BigNumber.from(0); 
@@ -244,8 +240,6 @@
                     document.getElementById('currentBid').textContent = 'ENCRYPTED';
                 }
 
-                auctionFinalized = finalized;
-
                 logMessage('[CONTRACT] Initial state loaded: Deposit, End Time, Lead Bidder, and Status.', 'info');
                 return true;
             } catch (error) {
@@ -257,14 +251,11 @@
 
         function listenToEvents() {
             if (!fheAuctionContract) return;
-
             fheAuctionContract.on("BidReceived", (bidder, depositAmount, isNewLeader, event) => {
                 const bidderShort = bidder.substring(0, 6);
                 const depositEth = ethers.utils.formatEther(depositAmount);
-                
                 let message;
                 let type = 'info';
-
                 if (isNewLeader) {
                     message = `[BID:NEW] New leader bid by ${bidderShort}... Amount: ${depositEth} ETH`;
                     type = 'confirmed';
@@ -273,22 +264,17 @@
                     type = 'pending';
                 }
                 logMessage(message, type);
-
                 document.getElementById('leadBidder').textContent = `${bidderShort}...`;
             });
 
             fheAuctionContract.on("AuctionFinished", async (winner, finalDeposit, event) => {
                 logMessage('[FINISH] AuctionFinished Event received from contract!', 'confirmed');
-                
                 const finalDepositETH = ethers.utils.formatEther(finalDeposit);
                 const winnerAddress = winner;
-                
                 document.getElementById('currentBid').textContent = `${finalDepositETH} ETH (WINNER)`;
                 document.getElementById('leadBidder').textContent = winnerAddress.substring(0, 10) + '...';
-                
                 logMessage(`[SUCCESS] AUCTION FINALIZED! Winning deposit: ${finalDepositETH} ETH. Winner: ${winnerAddress}.`, 'confirmed');
                 showNotification(`AUCTION ENDED. Winner: ${winnerAddress.substring(0, 6)}... with ${finalDepositETH} ETH.`, 'success');
-
                 fheAuctionContract.removeAllListeners("BidReceived");
                 fheAuctionContract.removeAllListeners("AuctionFinished");
             });
@@ -296,11 +282,10 @@
             fheAuctionContract.on("DecryptionRequested", (requestId, event) => {
                 logMessage(`[DECRYPT] Decryption requested. Request ID: ${requestId}. Awaiting callback...`, 'pending');
             });
-
             logMessage('[EVENT] Event listeners registered for BidReceived, AuctionFinished, and DecryptionRequested.', 'info');
         }
 
-        // --- WALLET & CONNECTION ---
+        // --- WALLET & CONNECTION (Giữ nguyên) ---
 
         async function connectWallet() {
             if (typeof window.ethereum === 'undefined') {
