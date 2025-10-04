@@ -66,7 +66,7 @@
                 <div class="wallet-status" id="walletStatus">
                     <p class="log-line log-info">[STATUS] Wallet: DISCONNECTED</p>
                     <p class="log-line log-info">[INFO] Target Network: **Sepolia (11155111)**</p>
-                    <p class="log-line log-pending" id="fheStatus">[FHE SDK] Initializing Relayer Public Key...</p>
+                    <p class="log-line log-pending" id="fheStatus">[FHE SDK] Initializing FHE WASM files...</p>
                 </div>
                 <button id="connectBtn">
                     &gt; CONNECT & CHECK NETWORK
@@ -127,14 +127,14 @@
     </div>
     
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@zama-fhe/relayer-sdk@latest/dist/relayer-sdk.min.js"></script>
+    
+    <script src="https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.umd.cjs"></script> 
 
     <script defer>
         // --- ZAMA FHE SDK & CONFIGURATION ---
         
         const CONTRACT_ADDRESS = '0x4140e9d65f5161c15843bd69413b691388230341'; 
         
-        // 🚨 ABI: Sử dụng Full ABI đã cập nhật
         const FHE_AUCTION_ABI = [{"inputs":[{"internalType":"uint256","name":"_durationInSeconds","type":"uint256"},{"internalType":"uint256","name":"_minDeposit","type":"uint256"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"HandlesAlreadySavedForRequestID","type":"error"},{"inputs":[],"name":"InvalidKMSSignatures","type":"error"},{"inputs":[],"name":"InvalidShortString","type":"error"},{"inputs":[],"name":"NoHandleFoundForRequestID","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"winner","type":"address"},{"indexed":false,"internalType":"uint256","name":"finalDeposit","type":"uint256"}],"name":"AuctionFinished","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"bidder","type":"address"},{"indexed":false,"internalType":"uint256","name":"depositAmount","type":"uint256"},{"indexed":false,"internalType":"bool","name":"isNewLeader","type":"bool"}],"name":"BidReceived","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"bidder","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"BidderWithdrew","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestID","type":"uint256"}],"name":"DecryptionFulfilled","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"requestId","type":"uint256"}],"name":"DecryptionRequested","type":"event"},{"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"recipient","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RefundIssued","type":"event"},{"stateMutability":"payable","type":"fallback"},{"inputs":[],"name":"auctionEndTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"auctionFinalized","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"externalEuint64","name":"encryptedBid","type":"bytes32"},{"internalType":"bytes","name":"proof","type":"bytes"}],"name":"bid","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"currentLeadBidder","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentLeadDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"emergencyCancel","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"finalizeAuction","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getAuctionEndTime","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getCurrentLeadBidder","outputs":[{"internalType":"address payable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getCurrentLeadDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getMinBidDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"isAuctionFinalized","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"bidder","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"manualRefund","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"minBidDeposit","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"bytes","name":"cleartexts","type":"bytes"},{"internalType":"bytes","name":"decryptionProof","type":"bytes"}],"name":"onDecryptionCallback","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"protocolId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"bidder","type":"address"}],"name":"requestDecryptBidderBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"requestDecryptMaxBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newLeader","type":"address"},{"internalType":"uint256","name":"newDeposit","type":"uint256"}],"name":"updateLeaderAfterReveal","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"winningBid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"withdrawWinnings","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}];
 
         const SEPOLIA_CHAIN_ID = 11155111; 
@@ -178,7 +178,8 @@
         // --- FHE SDK INITIALIZATION ---
 
         async function initFhevmSdk(currentProvider) {
-            const ZamaFhe = window.ZamaFheRelayerSdk || window.ZamaFhe;
+            // FIX: Sử dụng window.ZamaFhe như SDK UMD mới cung cấp
+            const ZamaFhe = window.ZamaFhe; 
 
             if (typeof ZamaFhe === 'undefined') {
                 logMessage('[ERROR] Zama SDK is not loaded. Check CDN link.', 'failed');
@@ -187,10 +188,17 @@
 
             const fheStatus = document.getElementById('fheStatus');
             try {
+                // BƯỚC 1: Tải WASM (Bắt buộc theo tài liệu mới)
+                fheStatus.textContent = '[FHE SDK] Initializing FHE WASM files... (initSDK)';
+                const { initSDK, createInstance, SepoliaConfig } = ZamaFhe;
+                await initSDK(); 
+                
+                // BƯỚC 2: Tải Public Key từ Relayer và tạo Instance
                 fheStatus.textContent = '[FHE SDK] Fetching public key from FHE Relayer...';
                 
-                const { createInstance, SepoliaConfig } = ZamaFhe;
-                const sdk = await createInstance(SepoliaConfig);
+                // Khởi tạo instance
+                const config = { ...SepoliaConfig, network: currentProvider };
+                const sdk = await createInstance(config);
 
                 fheStatus.textContent = '[FHE SDK] Public Key loaded. Ready for encryption.';
                 fheStatus.className = 'log-line log-confirmed';
@@ -199,8 +207,9 @@
 
             } catch (error) {
                 console.error("FHE SDK Initialization failed:", error);
-                fheStatus.textContent = '[FHE SDK] FAILED to load public key. Check FHEVM RPC/Relayer.';
+                fheStatus.textContent = '[FHE SDK] FAILED. Check Relayer Service status or network connection.';
                 fheStatus.className = 'log-line log-failed';
+                logMessage(`[FATAL] FHE SDK Failed: ${error.message}. Relayer or WASM loading failed.`, 'failed');
                 return null;
             }
         }
@@ -293,9 +302,8 @@
                 return;
             }
 
-            // Đây là điểm kiểm tra cuối cùng và quan trọng nhất
             if (typeof ethers === 'undefined') {
-                showNotification('Lỗi nghiêm trọng: Ethers.js không được định nghĩa. Vui lòng tải lại trang và kiểm tra kết nối mạng.', 'error');
+                showNotification('Lỗi nghiêm trọng: Ethers.js không được định nghĩa.', 'error');
                 return;
             }
 
@@ -318,6 +326,7 @@
                 signer = provider.getSigner();
                 account = await signer.getAddress();
                 
+                // GỌI INIT SDK MỚI
                 fhevmInstance = await initFhevmSdk(provider);
                 if (!fhevmInstance) {
                     throw new Error("FHE SDK failed to initialize. Cannot proceed.");
@@ -396,6 +405,7 @@
                 
                 logMessage(`[PROCESS] Initiating Zama SDK encryption for bid: ${bidAmountGwei} Gwei (**euint64**).`, 'info');
 
+                // FIX: Đảm bảo sử dụng provider đã kết nối
                 const buffer = fhevmInstance.createEncryptedInput(CONTRACT_ADDRESS, account);
                 buffer.add64(BigInt(bidAmountGwei));
 
