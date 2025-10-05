@@ -185,7 +185,7 @@
             try {
                 fheStatus.textContent = '[FHE SDK] Loading SDK (v0.2.0 ESM CDN)...';
                 // Dynamic import stable ESM 0.2.0
-                const mod = await import(/* @vite-ignore */ 'https://unpkg.com/@zama-fhe/relayer-sdk@0.2.0/lib/node.js?module');
+                const mod = await import('https://unpkg.com/@zama-fhe/relayer-sdk@0.2.0?module');
 
                 const { initSDK, createInstance, SepoliaConfig } = mod;
 
