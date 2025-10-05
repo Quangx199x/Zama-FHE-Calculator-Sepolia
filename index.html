@@ -128,8 +128,8 @@
     
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     
-    <!-- Updated to latest version 0.3.0 -->
-    <script src="https://cdn.zama.ai/relayer-sdk-js/0.3.0/relayer-sdk-js.umd.cjs"></script> 
+    <!-- Reverted to stable version 0.2.0 -->
+    <script src="https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.umd.cjs"></script> 
 
     <script defer>
         // --- ZAMA FHE SDK & CONFIGURATION ---
@@ -177,25 +177,44 @@
             setTimeout(() => { notification.remove(); }, 4000);
         }
 
-        // --- FHE SDK INITIALIZATION (Fixed: Simplified per latest docs, no initSDK/init, use string RPC) ---
+        // --- FHE SDK INITIALIZATION (Reverted to 0.2.0 with initSDK and fallback) ---
 
         async function initFhevmSdk() {
             const fheStatus = document.getElementById('fheStatus');
 
             try {
-                fheStatus.textContent = '[FHE SDK] Loading latest SDK (v0.3.0 ESM)...';
-                // Dynamic import latest ESM (no UMD conflict, per docs)
-                const mod = await import('https://cdn.zama.ai/relayer-sdk-js/0.3.0/relayer-sdk-js.js');
+                fheStatus.textContent = '[FHE SDK] Loading SDK (v0.2.0 ESM CDN)...';
+                // Dynamic import stable ESM 0.2.0
+                const mod = await import(/* @vite-ignore */ 'https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.js');
 
-                const { createInstance, SepoliaConfig } = mod;
+                const { initSDK, createInstance, SepoliaConfig } = mod;
 
-                fheStatus.textContent = '[FHE SDK] Creating instance with SepoliaConfig...';
+                fheStatus.textContent = '[FHE SDK] Initializing WASM (initSDK)...';
+                await initSDK(); // Required for v0.2.0
 
-                // Use SepoliaConfig directly (auto-handles endpoints, updated for 2025)
-                // Override network with public RPC string (docs recommend string, not window.ethereum)
-                const config = { ...SepoliaConfig, network: SEPOLIA_RPC, chainId: SEPOLIA_CHAIN_ID };
+                fheStatus.textContent = '[FHE SDK] Creating FHE instance...';
 
-                const sdkInstance = await createInstance(config);
+                // Use string RPC for stability
+                const baseConfig = { ...SepoliaConfig, network: SEPOLIA_RPC, chainId: SEPOLIA_CHAIN_ID };
+
+                let sdkInstance = null;
+                try {
+                    sdkInstance = await createInstance(baseConfig);
+                } catch (err) {
+                    // Fallback manual config if SepoliaConfig fails
+                    const manualConfig = {
+                        aclContractAddress: '0x687820221192C5B662b25367F70076A37bc79b6c',
+                        kmsContractAddress: '0x1364cBBf2DF5032C47d8226a6f6FBD2AFCDacAC',
+                        inputVerifierContractAddress: '0xbc91f3daD1A5F19F8390c400196e58073B6a0BC4',
+                        verifyingContractAddressDecryption: '0xb6E160B1ff80D67Bfe90A85eE06Ce0A2613607D1',
+                        verifyingContractAddressInputVerification: '0x7048C39f048125eDa9d678AEbaDfB22F7900a29F',
+                        chainId: SEPOLIA_CHAIN_ID,
+                        gatewayChainId: 55815,
+                        network: SEPOLIA_RPC,
+                        relayerUrl: 'https://relayer.testnet.zama.cloud',
+                    };
+                    sdkInstance = await createInstance(manualConfig);
+                }
 
                 fheStatus.textContent = '[FHE SDK] Public Key loaded. Ready for encryption.';
                 fheStatus.className = 'log-line log-confirmed';
@@ -291,7 +310,7 @@
             logMessage('[EVENT] Event listeners registered for BidReceived, AuctionFinished, and DecryptionRequested.', 'info');
         }
 
-        // --- WALLET & CONNECTION (Updated: Call initFhevmSdk without param, throw error if fail) ---
+        // --- WALLET & CONNECTION (Giữ nguyên) ---
 
         async function connectWallet() {
             if (typeof window.ethereum === 'undefined') {
