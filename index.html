@@ -128,8 +128,7 @@
     
     <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     
-    <!-- Reverted to stable version 0.2.0 -->
-    <script src="https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.umd.cjs"></script> 
+    <!-- Loại bỏ UMD CDN cũ; dùng esm.sh cho dynamic import -->
 
     <script defer>
         // --- ZAMA FHE SDK & CONFIGURATION ---
@@ -177,34 +176,34 @@
             setTimeout(() => { notification.remove(); }, 4000);
         }
 
-        // --- FHE SDK INITIALIZATION (Reverted to 0.2.0 with initSDK and fallback) ---
+        // --- FHE SDK INITIALIZATION (Fixed: Use esm.sh for public CDN, auto WASM, detailed error) ---
 
         async function initFhevmSdk() {
             const fheStatus = document.getElementById('fheStatus');
 
             try {
-                fheStatus.textContent = '[FHE SDK] Loading SDK (v0.2.0 ESM CDN)...';
-                // Dynamic import stable ESM 0.2.0
-                const mod = await import('https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.js');
+                fheStatus.textContent = '[FHE SDK] Loading via esm.sh CDN (v0.2.0)...';
+                // FIXED: Use public esm.sh CDN for reliable browser load (Zama CDN not public)
+                const mod = await import('https://esm.sh/@zama-fhe/relayer-sdk@0.2.0');
 
-                const { initSDK, createInstance, SepoliaConfig } = mod;
+                const { createInstance, SepoliaConfig } = mod;
 
-                fheStatus.textContent = '[FHE SDK] Initializing WASM (initSDK)...';
-                await initSDK(); // Required for v0.2.0
+                fheStatus.textContent = '[FHE SDK] Creating instance with SepoliaConfig...';
 
-                fheStatus.textContent = '[FHE SDK] Creating FHE instance...';
-
-                // Use string RPC for stability
-                const baseConfig = { ...SepoliaConfig, network: SEPOLIA_RPC, chainId: SEPOLIA_CHAIN_ID };
+                // Use SepoliaConfig with string RPC (auto WASM load on esm.sh)
+                const config = { ...SepoliaConfig, network: SEPOLIA_RPC, chainId: SEPOLIA_CHAIN_ID };
 
                 let sdkInstance = null;
                 try {
-                    sdkInstance = await createInstance(baseConfig);
+                    sdkInstance = await createInstance(config);
+                    // Test public key fetch (docs: instance ready if no error)
+                    console.log('[DEBUG] SDK instance created, public key should be loaded');
                 } catch (err) {
-                    // Fallback manual config if SepoliaConfig fails
+                    logMessage(`[FHE] SepoliaConfig failed: ${err.message}. Trying manual...`, 'pending');
+                    // Fallback manual config (from docs)
                     const manualConfig = {
                         aclContractAddress: '0x687820221192C5B662b25367F70076A37bc79b6c',
-                        kmsContractAddress: '0x1364cBBf2DF5032C47d8226a6f6FBD2AFCDacAC',
+                        kmsContractAddress: '0x1364cBBf2cDF5032C47d8226a6f6FBD2AFCDacAC',
                         inputVerifierContractAddress: '0xbc91f3daD1A5F19F8390c400196e58073B6a0BC4',
                         verifyingContractAddressDecryption: '0xb6E160B1ff80D67Bfe90A85eE06Ce0A2613607D1',
                         verifyingContractAddressInputVerification: '0x7048C39f048125eDa9d678AEbaDfB22F7900a29F',
@@ -216,16 +215,16 @@
                     sdkInstance = await createInstance(manualConfig);
                 }
 
-                fheStatus.textContent = '[FHE SDK] Public Key loaded. Ready for encryption.';
+                fheStatus.textContent = '[FHE SDK] Public Key loaded from relayer. Ready for encryption.';
                 fheStatus.className = 'log-line log-confirmed';
                 logMessage('[FHE] SDK initialized successfully. Client-side encryption enabled.', 'confirmed');
                 return sdkInstance;
 
             } catch (error) {
                 console.error("FHE SDK Initialization failed:", error);
-                fheStatus.textContent = '[FHE SDK] FAILED. Check Relayer Service status or network connection.';
+                fheStatus.textContent = '[FHE SDK] FAILED. Check console for details (e.g., network/CDN).';
                 fheStatus.className = 'log-line log-failed';
-                logMessage(`[FATAL] FHE SDK Failed: ${error.message || error}`, 'failed');
+                logMessage(`[FATAL] FHE SDK Failed: ${error.message || error}. Threads warning OK, but import/fetch issue.`, 'failed');
                 throw new Error("FHE SDK failed to initialize. Cannot proceed.");
             }
         }
@@ -377,7 +376,7 @@
             }
         }
 
-        // --- BIDDING LOGIC (Fixed: Use handles[0] and inputProof from encrypt()) ---
+        // --- BIDDING LOGIC (Giữ nguyên) ---
 
         async function placeBid() {
             const bidInput = document.getElementById('bidAmount');
