@@ -4,86 +4,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FHE Auction Bidder</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@6.0.0/dist/ethers.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fhevmjs@latest/umd/fhevm.min.js"></script>
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
     <h1>FHE Auction Bidder</h1>
     <button id="connectWallet">Connect Wallet</button>
     <p id="walletAddress"></p>
-    <input type="number" id="bidValue" placeholder="Enter Bid Value (uint64)" min="0" max="18446744073709551615">
-    <input type="number" id="depositValue" placeholder="Enter Deposit ETH (in wei)" min="100000000000000000"> <!-- Ví dụ min 0.1 ETH -->
+    <input type="number" id="bidValue" placeholder="Enter Bid Value (Gwei)" min="0">
+    <input type="number" id="depositValue" placeholder="Enter Deposit ETH" min="0.001" step="0.001">
     <button id="placeBid" disabled>Place Bid</button>
     <p id="status"></p>
 
-    <script>
-        const CONTRACT_ADDRESS = '0xYourDeployedContractAddressHere'; // Thay bằng address contract
-        const CONTRACT_ABI = [ // ABI của hàm bid
-            'function bid(externalEuint64 encryptedBid, bytes calldata inputProof, bytes32 publicKey, bytes calldata signature) external payable'
+    <script type="module">
+        import { initSDK, createInstance, SepoliaConfig } from 'https://cdn.zama.ai/relayer-sdk-js/0.2.0/relayer-sdk-js.js';
+
+        const CONTRACT_ADDRESS = '0xf1314dff22d14ae4a00e0ea0e05027c1abf985a5';
+        const CHAIN_ID = 11155111;
+        const RPC_URL = 'https://eth-sepolia.public.blastapi.io';
+        const RELAYER_URL = 'https://relayer.testnet.zama.cloud';
+
+        let provider, signer, contract, account, fhevmInstance;
+
+        const FHE_AUCTION_ABI = [
+            {
+                "inputs": [
+                    {"internalType": "externalEuint64", "name": "encryptedBid", "type": "bytes32"},
+                    {"internalType": "bytes", "name": "inputProof", "type": "bytes"},
+                    {"internalType": "bytes32", "name": "publicKey", "type": "bytes32"},
+                    {"internalType": "bytes", "name": "signature", "type": "bytes"}
+                ],
+                "name": "bid",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            }
         ];
-        const CHAIN_ID = 11155111; // Sepolia
-        const GATEWAY_URL = 'https://gateway.testnet.zama.ai'; // Gateway cho fhevmjs
 
-        let provider, signer, contract, instance;
-
-        // Khởi tạo fhevmjs
-        async function initFhevm() {
-            instance = await createFhevmInstance({ chainId: CHAIN_ID, publicKey: await fetchPublicKey() });
-        }
-
-        async function fetchPublicKey() {
-            const response = await fetch(`${GATEWAY_URL}/get_public_key`);
-            const { publicKey } = await response.json();
-            return publicKey;
+        async function initFhevmSdk() {
+            try {
+                await initSDK();
+                const config = {
+                    ...SepoliaConfig,
+                    network: RPC_URL,
+                    chainId: CHAIN_ID,
+                    relayerUrl: RELAYER_URL
+                };
+                fhevmInstance = await createInstance(config);
+                document.getElementById('status').textContent = 'FHE SDK initialized.';
+            } catch (error) {
+                console.error('FHE SDK Error:', error);
+                document.getElementById('status').textContent = `FHE SDK init failed: ${error.message}`;
+            }
         }
 
         // Kết nối ví
         document.getElementById('connectWallet').addEventListener('click', async () => {
-            if (window.ethereum) {
-                provider = new ethers.BrowserProvider(window.ethereum);
-                await provider.send('eth_requestAccounts', []);
-                signer = await provider.getSigner();
-                const address = await signer.getAddress();
-                document.getElementById('walletAddress').textContent = `Connected: ${address}`;
-                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-                await initFhevm();
+            if (typeof window.ethereum === 'undefined') {
+                alert('MetaMask not detected!');
+                return;
+            }
+
+            try {
+                // Request accounts
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                // Switch to Sepolia
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: `0x${CHAIN_ID.toString(16)}` }],
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        alert('Please add Sepolia network to MetaMask');
+                        throw new Error('Sepolia network not added');
+                    }
+                    throw switchError;
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                account = await signer.getAddress();
+                document.getElementById('walletAddress').textContent = `Connected: ${account}`;
+
+                contract = new ethers.Contract(CONTRACT_ADDRESS, FHE_AUCTION_ABI, signer);
+
+                await initFhevmSdk();
+
                 document.getElementById('placeBid').disabled = false;
                 document.getElementById('status').textContent = 'Ready to bid.';
-            } else {
-                alert('Install MetaMask!');
+            } catch (error) {
+                console.error('Connection error:', error);
+                document.getElementById('status').textContent = `Error: ${error.message}`;
             }
         });
 
         // Đặt bid
         document.getElementById('placeBid').addEventListener('click', async () => {
             const bidValue = BigInt(document.getElementById('bidValue').value);
-            const depositValue = BigInt(document.getElementById('depositValue').value);
+            const depositValue = parseFloat(document.getElementById('depositValue').value);
 
-            if (!instance) return alert('Init fhevm first!');
+            if (!fhevmInstance) return alert('Init FHE SDK first!');
 
-            // Encrypt bid (euint64)
-            const encryptedBid = instance.encrypt64(bidValue); // Trả về ciphertext (externalEuint64 format)
-            const inputProof = instance.generateInputProof(encryptedBid); // Proof cho FHE.fromExternal
-
-            // PublicKey: Sử dụng network public key (bytes32)
-            const publicKey = instance.publicKey; // Từ instance
-
-            // Ký publicKey (EIP712)
-            const domain = {
-                name: 'FHEAuction',
-                version: '1',
-                chainId: CHAIN_ID,
-                verifyingContract: CONTRACT_ADDRESS
-            };
-            const types = {
-                PublicKey: [{ name: 'key', type: 'bytes32' }]
-            };
-            const value = { key: publicKey };
-            const signature = await signer.signTypedData(domain, types, value);
-
-            // Gọi contract bid
             try {
-                const tx = await contract.bid(encryptedBid, inputProof, publicKey, signature, { value: depositValue });
+                const input = fhevmInstance.createEncryptedInput(CONTRACT_ADDRESS, account);
+                input.add64(bidValue);
+
+                const encryptedData = await input.encrypt();
+
+                const encryptedBid = encryptedData.handles[0];
+                const inputProof = encryptedData.inputProof;
+
+                const encryptedBidBytes32 = typeof encryptedBid === 'string' && encryptedBid.startsWith('0x') 
+                    ? encryptedBid 
+                    : ethers.utils.hexlify(encryptedBid);
+
+                const publicKeyToSign = encryptedBidBytes32;
+
+                const domain = {
+                    name: 'FHEAuction',
+                    version: '1',
+                    chainId: CHAIN_ID,
+                    verifyingContract: CONTRACT_ADDRESS
+                };
+
+                const types = {
+                    PublicKey: [{ name: 'key', type: 'bytes32' }]
+                };
+
+                const value = { key: publicKeyToSign };
+
+                const signature = await signer._signTypedData(domain, types, value);
+
+                const depositWei = ethers.utils.parseEther(depositValue.toString());
+
+                const tx = await contract.bid(
+                    encryptedBidBytes32,
+                    inputProof,
+                    publicKeyToSign,
+                    signature,
+                    { value: depositWei, gasLimit: 500000 }
+                );
+
                 document.getElementById('status').textContent = `Bid placed! Tx: ${tx.hash}`;
                 await tx.wait();
                 alert('Bid confirmed!');
